@@ -143,15 +143,17 @@ def main() -> int:
     tmpd.mkdir()
 
     run(["git", "init", "--bare", "-q", str(remote)], tmp)
-    # Clone without gh-pages, exactly like actions/checkout's default shallow fetch.
-    run(["git", "clone", "-q", "--single-branch", "--branch", "master", str(REPO), str(work)], tmp)
-    # actions/checkout produces a *shallow* clone, and a shallow clone cannot be pushed
-    # to a fresh remote ("shallow update not allowed"). This test needs a pushable repo,
-    # so unshallow first — the publish logic itself is unaffected.
+    # Clone the project into the sandbox. Deliberately a *local path* clone: git ignores
+    # --depth for local clones, so this is always a full clone we can push from. In CI the
+    # checkout is shallow, and a shallow clone cannot be pushed to a fresh remote
+    # ("shallow update not allowed"). An earlier attempt to `git fetch --unshallow` was
+    # unreliable there, because actions/checkout leaves no local branch ref for it to use.
+    run(["git", "clone", "-q", "--branch", "master", str(REPO), str(work)], tmp)
     if (work / ".git" / "shallow").exists():
-        run([*GIT, "fetch", "--quiet", "--unshallow"], work)
+        raise RuntimeError("sandbox clone is shallow; this test needs a pushable full clone")
     run([*GIT, "remote", "set-url", "origin", str(remote)], work)
     run([*GIT, "push", "-q", "origin", "master"], work)
+    # mimic actions/checkout: the local repo knows only the default branch
     run([*GIT, "remote", "set-branches", "origin", "master"], work)
 
     try:
