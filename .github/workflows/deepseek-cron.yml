@@ -1,0 +1,229 @@
+name: DeepSeek Daily Usage Export
+
+# schedule / cron 使用 UTC 时间。
+# "0 17 * * *" = UTC 17:00 = 北京时间（UTC+8）次日 01:00。
+# 例如：北京时间 2026-09-22 01:00 触发，抓取 2026-09-21 全天的数据。
+on:
+  schedule:
+    - cron: "0 17 * * *"
+  workflow_dispatch:
+
+# 需要写权限才能把生成的数据提交回本仓库。
+permissions:
+  contents: write
+
+# 同一时间只允许一个任务在跑，避免两个 run 同时提交造成推冲突。
+concurrency:
+  group: deepseek-daily-usage
+  cancel-in-progress: false
+
+jobs:
+  export-usage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch daily usage export
+        env:
+          DEEPSEEK_PLATFORM_TOKEN: ${{ secrets.DEEPSEEK_PLATFORM_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # ---------- 计算北京时间「前一天 00:00:00 ~ 当天 00:00:00」的区间 ----------
+          # 全部用纯 epoch 算术完成，不依赖 tzdata（TZ=Asia/Shanghai 在部分环境不可靠），
+          # 也不依赖 date 本地时区：runner 的本地时区与 UTC 是否一致都不影响结果。
+          #
+          # 关键点：北京时间 00:00 == 其前一天 UTC 16:00。
+          # 先把「北京时间现在」按 86400 取整，得到北京时间当天零点的 epoch 表示，
+          # 再减去 8 小时时差，就得到该零点的真实 UTC 时间戳。
+          BEIJING_OFFSET=28800
+          DAY=86400
+
+          NOW=$(date -u +%s)
+          if ! BEIJING_EPOCH=$(( NOW + BEIJING_OFFSET )); then
+            echo "::error::failed to read current epoch time"
+            exit 1
+          fi
+          ROUNDED_MIDNIGHT=$(( BEIJING_EPOCH - (BEIJING_EPOCH % DAY) ))
+
+          # 最近一个「已完整结束」的北京日 = 当前北京日的前一天。
+          TARGET_DATE=$(date -u -d "@$(( ROUNDED_MIDNIGHT - DAY ))" +%F)
+          END=$(( ROUNDED_MIDNIGHT - BEIJING_OFFSET ))
+          START=$(( END - DAY ))
+
+          # ---------- 自检：区间必须正好 24 小时，且两端都落在 UTC 16:00 ----------
+          if [ "$(( END - START ))" -ne 86400 ]; then
+            echo "::error::unexpected interval $(( END - START ))s between START and END"
+            exit 1
+          fi
+          if [ "$(( START % DAY ))" -ne 57600 ] || [ "$(( END % DAY ))" -ne 57600 ]; then
+            echo "::error::window edges are not at 00:00 Beijing (START=${START}, END=${END})"
+            exit 1
+          fi
+          # 归档日期标签必须与 START 对应的北京日期一致。
+          LABEL_FROM_START=$(date -u -d "@$(( START + BEIJING_OFFSET ))" +%F)
+          if [ "${LABEL_FROM_START}" != "${TARGET_DATE}" ]; then
+            echo "::error::date label mismatch: ${LABEL_FROM_START} != ${TARGET_DATE}"
+            exit 1
+          fi
+
+          echo "Current UTC        : $(date -u '+%F %H:%M:%S')"
+          echo "Target usage date  : ${TARGET_DATE} (00:00 -> 24:00 Beijing)"
+          echo "START (epoch)      : ${START}  = $(date -u -d "@${START}" '+%F %H:%M:%S') UTC = $(date -u -d "@$(( START + BEIJING_OFFSET ))" '+%F %H:%M:%S') UTC+8"
+          echo "END   (epoch)      : ${END}  = $(date -u -d "@${END}" '+%F %H:%M:%S') UTC = $(date -u -d "@$(( END + BEIJING_OFFSET ))" '+%F %H:%M:%S') UTC+8"
+
+          # 注意：写入 GITHUB_ENV 的变量只对后续 step 生效，本 step 内不可见，
+          # 因此后续 step 需要先把它取到本地变量再用（不要直接展开该变量）。
+          {
+            echo "target_date=${TARGET_DATE}"
+            echo "start=${START}"
+            echo "end=${END}"
+          } >> "$GITHUB_ENV"
+
+          # ---------- 前置检查：token 是否配置 ----------
+          # Secrets 未配置时是空字符串，提前失败并给出可操作的提示。
+          if [ -z "${DEEPSEEK_PLATFORM_TOKEN:-}" ]; then
+            echo "::error::Secret DEEPSEEK_PLATFORM_TOKEN is not set (Settings -> Secrets and variables -> Actions)."
+            exit 1
+          fi
+
+          # ---------- 下载压缩包 ----------
+          URL="https://platform.deepseek.com/api/v0/usage/export?start=${START}&end=${END}&tz=28800"
+          HTTP_CODE=""
+          for attempt in 1 2 3; do
+            echo "Requesting export (attempt ${attempt}/3): ${URL}"
+            # 不用 -f：先拿到状态码，便于区分 401/403（token 过期）
+            # 与 200 但返回 JSON 错误体（接口变动）两种失败。
+            HTTP_CODE=$(curl -sS -L \
+              --connect-timeout 15 \
+              --max-time 120 \
+              -w '%{http_code}' \
+              -H "Authorization: Bearer ${DEEPSEEK_PLATFORM_TOKEN}" \
+              -H "Accept: */*" \
+              -o usage.zip \
+              "${URL}") && break || echo "::warning::curl failed on attempt ${attempt}"
+
+            if [ "${attempt}" -eq 3 ]; then
+              echo "::error::curl could not reach the export endpoint after 3 attempts"
+              exit 1
+            fi
+            sleep 20
+          done
+
+          echo "HTTP status: ${HTTP_CODE}"
+          echo "Downloaded bytes: $(wc -c < usage.zip)"
+
+          case "${HTTP_CODE}" in
+            200) ;;
+            401|403)
+              echo "::error::HTTP ${HTTP_CODE}: DEEPSEEK_PLATFORM_TOKEN is invalid or expired. Re-copy userToken from platform.deepseek.com LocalStorage and update the repo Secret."
+              exit 1
+              ;;
+            *)
+              echo "::error::Unexpected HTTP ${HTTP_CODE} from export endpoint"
+              exit 1
+              ;;
+          esac
+
+          # 必须是一个真正的 zip，否则说明拿到的是错误页/JSON 错误体。
+          if ! unzip -t usage.zip >/dev/null 2>&1; then
+            echo "::error::Response is not a valid zip archive; first 500 bytes:"
+            head -c 500 usage.zip || true
+            echo
+            exit 1
+          fi
+
+      - name: Extract and parse amount CSV
+        run: |
+          set -euo pipefail
+
+          # 来自上一个 step 通过 GITHUB_ENV 导出的值：必须在 step 内部先取到本地变量，
+          # 因为 GITHUB_ENV 的变量不会在写入它的那个 step 内生效。
+          TARGET_DATE="${target_date}"
+          if [ -z "${TARGET_DATE}" ]; then
+            echo "::error::target_date is empty; the fetch step did not complete correctly."
+            exit 1
+          fi
+
+          WORK_DIR="$(mktemp -d)"
+          echo "Extracting usage.zip -> ${WORK_DIR}"
+          unzip -o usage.zip -d "${WORK_DIR}"
+
+          echo "Archive contents:"
+          find "${WORK_DIR}" -type f -printf '  %P (%s bytes)\n' | sort
+
+          # 压缩包内含 amount 与 cost 两个 CSV，这里只取 amount。
+          # 文件名可能带前缀/后缀（例如 amount_xxx.csv / usage-amount.csv），
+          # 所以做模糊匹配，并显式排除 cost。
+          mapfile -t AMOUNT_FILES < <(
+            find "${WORK_DIR}" -type f -iname '*.csv' \
+              ! -iname '*cost*' \
+              \( -iname '*amount*' -o -iname '*usage*' \) | sort
+          )
+
+          if [ "${#AMOUNT_FILES[@]}" -eq 0 ]; then
+            echo "::error::No amount CSV found inside the archive (looked for *amount*.csv / *usage*.csv, excluding cost)."
+            exit 1
+          fi
+          if [ "${#AMOUNT_FILES[@]}" -gt 1 ]; then
+            echo "::error::Ambiguous archive layout: ${#AMOUNT_FILES[@]} candidate amount CSVs found. Adjust the matcher in the workflow."
+            printf '  %s\n' "${AMOUNT_FILES[@]}"
+            exit 1
+          fi
+
+          AMOUNT_FILE="${AMOUNT_FILES[0]}"
+          echo "Using amount CSV: ${AMOUNT_FILE}"
+
+          DATA_DIR="data"
+          TARGET="${DATA_DIR}/amount-${TARGET_DATE}.csv"
+          mkdir -p "${DATA_DIR}"
+
+          # 去掉 UTF-8 BOM，避免某些消费方把首列表头读成 "\ufeffxxx"。
+          sed '1s/^\xEF\xBB\xBF//' "${AMOUNT_FILE}" > "${TARGET}"
+
+          BYTES=$(wc -c < "${TARGET}")
+          ROWS=$(( $(wc -l < "${TARGET}") - 1 ))
+          echo "Wrote ${TARGET} (${BYTES} bytes, ~${ROWS} data rows)"
+
+          if [ "${BYTES}" -eq 0 ]; then
+            echo "::error::Extracted amount CSV is empty; refusing to commit an empty file."
+            rm -f "${TARGET}"
+            exit 1
+          fi
+
+          # 只提交真正有数据行的文件；仅表头的文件正常退出（不算失败，避免误报）。
+          if [ "${ROWS}" -le 0 ]; then
+            echo "::warning::amount CSV has no data rows for ${TARGET_DATE} (header only)."
+            rm -f "${TARGET}"
+            echo "target_written=false" >> "$GITHUB_ENV"
+          else
+            echo "target_written=true" >> "$GITHUB_ENV"
+            echo "target_path=${TARGET}" >> "$GITHUB_ENV"
+          fi
+
+          rm -rf "${WORK_DIR}"
+
+      - name: Commit and push changes
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [ "${target_written}" != "true" ]; then
+            echo "No data rows produced for ${target_date}; nothing to commit."
+            exit 0
+          fi
+
+          git add -- "${target_path}"
+
+          # 内容没变就不提交，避免产生空提交。
+          if git diff --cached --quiet; then
+            echo "No changes to commit for ${target_date} (file already up to date)."
+            exit 0
+          fi
+
+          git status --short
+          git commit -m "data: amount ${target_date}"
+          git push
