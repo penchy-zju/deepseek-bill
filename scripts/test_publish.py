@@ -143,15 +143,27 @@ def main() -> int:
     tmpd.mkdir()
 
     run(["git", "init", "--bare", "-q", str(remote)], tmp)
-    # Clone the project into the sandbox. Deliberately a *local path* clone: git ignores
-    # --depth for local clones, so this is always a full clone we can push from. In CI the
-    # checkout is shallow, and a shallow clone cannot be pushed to a fresh remote
-    # ("shallow update not allowed"). An earlier attempt to `git fetch --unshallow` was
-    # unreliable there, because actions/checkout leaves no local branch ref for it to use.
-    run(["git", "clone", "-q", "--branch", "master", str(REPO), str(work)], tmp)
-    if (work / ".git" / "shallow").exists():
-        raise RuntimeError("sandbox clone is shallow; this test needs a pushable full clone")
-    run([*GIT, "remote", "set-url", "origin", str(remote)], work)
+    # Build the sandbox as a brand-new repo populated from the checked-out working tree.
+    #
+    # Why not clone: in CI the checkout is *shallow*, and a shallow clone cannot be pushed
+    # to a fresh remote ("shallow update not allowed"), nor reliably unshallowed
+    # (actions/checkout leaves no local branch ref for `fetch --unshallow` to resolve).
+    # Re-initialising from the working tree sidesteps all of that and keeps this test
+    # independent of how the checkout was made.
+    work.mkdir()
+    run([*GIT, "init", "-q"], work)
+    run([*GIT, "checkout", "-q", "-b", "master"], work)
+    for entry in sorted(REPO.iterdir()):
+        if entry.name == ".git" or entry.name.startswith("_"):
+            continue
+        dst = work / entry.name
+        if entry.is_dir():
+            shutil.copytree(entry, dst, ignore=shutil.ignore_patterns(".git"))
+        else:
+            shutil.copy(entry, dst)
+    run([*GIT, "add", "-A"], work)
+    run([*GIT, "commit", "-q", "-m", "seed: working tree snapshot"], work)
+    run([*GIT, "remote", "add", "origin", str(remote)], work)
     run([*GIT, "push", "-q", "origin", "master"], work)
     # mimic actions/checkout: the local repo knows only the default branch
     run([*GIT, "remote", "set-branches", "origin", "master"], work)
