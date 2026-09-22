@@ -113,21 +113,14 @@ def build() -> dict:
     warnings: list[str] = []
     files = sorted(glob.glob(DATA_GLOB))
     dates: dict = {}
-    digest = hashlib.sha256()
     for path in files:
         date = date_from_path(path)
-        # 把输入内容纳入指纹：数据不变 -> 指纹不变 -> 生成结果逐字节相同，
-        # 这样“无变化时不产生空提交”的判定才成立（绝不能嵌入构建时间戳，
-        # 那会让每次构建都产生差异，从而每次都提交一次假更新）。
-        with open(path, "rb") as fh:
-            digest.update(fh.read())
         parsed = parse_amount_csv(path, warnings)
         if parsed:
             dates[date] = parsed
 
     available = sorted(dates)
     return {
-        "data_version": digest.hexdigest()[:12],
         "default_date": default_date(available),
         "dates": available,
         "data": dates,
@@ -136,9 +129,25 @@ def build() -> dict:
     }
 
 
+def data_version(jsonable: dict) -> str:
+    """Fingerprint of the *normalized aggregated data* (not of the raw files).
+
+    Hashing the aggregated result (rather than the raw CSV bytes) keeps the fingerprint
+    identical across platforms and checkouts. Hashing raw bytes was wrong: git's
+    autocrlf rewrites the working copy to CRLF on Windows while the repo stores LF, so the
+    same data produced a different fingerprint locally than in CI — which made the
+    dashboard differ by one line and pushed a pointless rebuild commit on every run.
+
+    The fingerprint changes whenever any displayed value changes, so it still serves its
+    purpose as a "did the output really change" marker.
+    """
+    canonical = json.dumps(jsonable["data"], ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:12]
+
+
 def to_jsonable(payload: dict) -> dict:
     """Decimal -> str, keep full precision (JS will parse to Number)."""
-    out = {"data_version": payload["data_version"], "default_date": payload["default_date"],
+    out = {"default_date": payload["default_date"],
            "dates": payload["dates"], "warnings": payload["warnings"],
            "source_files": payload["source_files"], "data": {}}
     for date, keys in payload["data"].items():
@@ -155,6 +164,7 @@ def to_jsonable(payload: dict) -> dict:
                     "cost": {k: str(v) for k, v in rec["cost"].items()},
                 }
             out["data"][date][key] = {"name": entry["name"], "masked": entry["masked"], "models": models}
+    out["data_version"] = data_version(out)
     return out
 
 

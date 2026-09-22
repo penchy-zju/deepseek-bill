@@ -181,7 +181,8 @@ jobs:
           mkdir -p "${DATA_DIR}"
 
           # 三件事一起做：
-          # 1) 去掉 UTF-8 BOM，避免某些消费方把首列表头读成 "\ufeffxxx"；
+          # 1) 去掉 UTF-8 BOM——必须显式去掉：`read` 会把 BOM 字节一起读进变量，
+          #    原样回写等于没去（曾因此让 BOM 混进仓库）；
           # 2) 去掉行尾的 \r——接口压缩包里的 CSV 是 CRLF，若原样入库，
           #    在 Windows 上 checkout 会因 autocrlf 变成 LF，导致同一份数据
           #    在不同平台呈现出差异；统一成 LF 后结果与平台无关；
@@ -190,11 +191,19 @@ jobs:
           #    排序键取 (start_time, model, api_key, type)，既保证同一输入产出逐字节
           #    相同的结果，又让文件保持按时间排列、方便人看。
           read -r HEADER < "${AMOUNT_FILE}"
-          HEADER="${HEADER%$'\r'}"
+          HEADER="${HEADER#$'\xEF\xBB\xBF'}"   # 去 BOM
+          HEADER="${HEADER%$'\r'}"             # 去 CR
           {
             printf '%s\n' "${HEADER}"
             tail -n +2 "${AMOUNT_FILE}" | tr -d '\r' | sort -t, -k2,2 -k4,4 -k6,6 -k7,7
           } > "${TARGET}"
+
+          # 自检：写出后首字节必须是 'u'（表头 user_id），确认 BOM/CR 都已清掉。
+          FIRST_BYTES=$(head -c 3 "${TARGET}" | od -An -tx1 | tr -d ' \n')
+          if [ "${FIRST_BYTES}" != "7573" ] && [ "${FIRST_BYTES}" != "757365" ]; then
+            echo "::error::extracted CSV still starts with unexpected bytes (${FIRST_BYTES}); expected 'us…'"
+            exit 1
+          fi
 
           BYTES=$(wc -c < "${TARGET}")
           ROWS=$(( $(wc -l < "${TARGET}") - 1 ))
