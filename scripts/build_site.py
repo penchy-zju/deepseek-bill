@@ -280,12 +280,12 @@ const fmtTokens = n => {                       // 1.23M / 456.7K
   if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
   return String(n);
 };
-const fmtMoney = v => {                        // 自适应精度，避免小费用被显示成 $0.0000
+const fmtMoney = v => {                        // 自适应精度，避免小费用被显示成 ¥0.0000
   const n = Number(v) || 0;
-  if (n === 0) return '$0';
-  if (n < 0.0001) return '$' + n.toFixed(8).replace(/0+$/, '').replace(/\.$/, '');
-  if (n < 1) return '$' + n.toFixed(6);
-  return '$' + n.toFixed(4);
+  if (n === 0) return '¥0';
+  if (n < 0.0001) return '¥' + n.toFixed(8).replace(/0+$/, '').replace(/\.$/, '');
+  if (n < 1) return '¥' + n.toFixed(6);
+  return '¥' + n.toFixed(4);
 };
 const sum = (a, b) => (Number(a) || 0) + (Number(b) || 0);
 

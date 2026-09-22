@@ -217,5 +217,14 @@ ok(typeof fmtMoney("0.0000001") === "string" && !fmtMoney("0.0000001").includes(
 ok(fmtInt(1234567) === "1,234,567", "large integers get separators", fmtInt(1234567));
 ok(fmtTokens(1500000) === "1.50M", "token compaction works", fmtTokens(1500000));
 
+// Currency must be RMB (¥), never a dollar sign.
+const moneySamples = [fmtMoney(0), fmtMoney("0.0000001"), fmtMoney("0.5"), fmtMoney("31.81646024"), fmtMoney(1234.5)];
+ok(moneySamples.every((s) => s.includes("\u00A5")), "every formatted amount uses the ¥ symbol",
+   moneySamples.join(" "));
+ok(moneySamples.every((s) => !s.includes("$")), "no formatted amount contains a dollar sign",
+   moneySamples.join(" "));
+ok(!detail.includes(">$") && !detail.includes("> $"),
+   "rendered cost cells never show a dollar sign");
+
 console.log(`\nRESULT: ${checks - failures}/${checks} checks passed`);
 process.exit(failures ? 1 : 0);
