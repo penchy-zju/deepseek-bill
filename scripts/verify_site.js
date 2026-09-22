@@ -226,5 +226,47 @@ ok(moneySamples.every((s) => !s.includes("$")), "no formatted amount contains a 
 ok(!detail.includes(">$") && !detail.includes("> $"),
    "rendered cost cells never show a dollar sign");
 
+console.log("\n== table structure (column alignment) ==");
+// The bug fixed here: the 小计 (subtotal) row used to omit the 模型 cell, so its 9 cells
+// shifted one column right under a 10-column header. Keep a simple, obvious check.
+function rowCellCounts(htmlStr) {
+  return [...htmlStr.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)]
+    .map((m) => [...m[1].matchAll(/<t[dh][^>]*>/g)].length);
+}
+
+const compare = __els.compareTable ? __els.compareTable._html : "";
+const detailCounts = rowCellCounts(detail);
+const compareCounts = rowCellCounts(compare);
+
+ok(detailCounts.length > 0 && detailCounts.every((n) => n === 9),
+   "detail table: every row has 9 cells", `counts = ${detailCounts.join(",")}`);
+// data rows carry 10 cells; the 小计 row replaces the (rowspan) key cell with its label,
+// so it must still have 10 cells to stay aligned; only the rowspan continuation row has 9
+ok(compareCounts.every((n) => n === 9 || n === 10),
+   "compare table: rows have 9 (rowspan continuation) or 10 cells",
+   `counts = ${compareCounts.join(",")}`);
+ok(compareCounts.filter((n) => n === 10).length === compareCounts.length - 1,
+   "compare table: exactly one row (the rowspan continuation) has fewer cells",
+   `counts = ${compareCounts.join(",")}`);
+ok(compare.includes('>小计</td><td class="grp"></td>'),
+   "小计 row keeps an empty 模型 cell so its values stay under the right headers");
+
+// the 小计 row's numbers must equal the sum of the two model rows above it
+const subtotalRow = (compare.match(/<tr class="total">[\s\S]*?<\/tr>/g) || [])
+  .find((r) => r.includes("小计"));
+if (subtotalRow) {
+  const cells = [...subtotalRow.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => m[1].replace(/<[^>]*>/g, "").trim());
+  const multiKey = Object.keys(SITE.data[date]).find((k) => Object.keys(SITE.data[date][k].models).length > 1);
+  if (multiKey) {
+    const t = metricsOf(SITE.data[date][multiKey].models);
+    ok(cells[0] === "小计", "subtotal row starts with the 小计 label", cells[0]);
+    ok(cells[1] === "", "subtotal row has an empty 模型 cell", JSON.stringify(cells[1]));
+    ok(cells[2] === fmtInt(t.requests), "subtotal 调用次数 is under the 调用次数 header",
+       `${cells[2]} vs ${fmtInt(t.requests)}`);
+    ok(cells[cells.length - 1] === fmtMoney(t.cost_total), "subtotal 费用合计 is in the last column",
+       `${cells[cells.length - 1]} vs ${fmtMoney(t.cost_total)}`);
+  }
+}
+
 console.log(`\nRESULT: ${checks - failures}/${checks} checks passed`);
 process.exit(failures ? 1 : 0);

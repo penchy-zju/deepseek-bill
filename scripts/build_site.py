@@ -217,6 +217,13 @@ TEMPLATE = r"""<!DOCTYPE html>
   th, td { padding:9px 11px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
   th { color:var(--muted); font-weight:600; font-size:12px; text-align:right; background:transparent; }
   th:first-child, td:first-child { text-align:left; }
+  /* 「全部 API Key 对比」表里前两列是文字（API Key / 模型）：统一左对齐。
+     否则模型名会按 right 对齐，同一列里不同长度的名字左右边缘参差；
+     而表头「模型」是左对齐的，正文却右对齐，看起来也对不上。 */
+  #compareTable th:nth-child(1), #compareTable td:nth-child(1),
+  #compareTable th:nth-child(2), #compareTable td:nth-child(2) { text-align:left; }
+  /* 小计行：模型列留空，让右侧各数值与上方各列严格对齐 */
+  tr.total td.subtotal-label { text-align:left; color:var(--ink); }
   tbody tr:hover { background:var(--accent-soft); }
   tr.total td { font-weight:650; border-top:2px solid var(--line); border-bottom:0; }
   .grp { border-left:1px solid var(--line); }
@@ -483,7 +490,9 @@ function init() {
           <td class="grp">${fmtMoney(r.cost.cache_hit)}</td><td>${fmtMoney(r.cost.cache_miss)}</td><td>${fmtMoney(r.cost.output)}</td>
           <td class="grp">${fmtMoney(r.cost_total)}</td></tr>`;
         if (i === modelNames.length - 1 && modelNames.length > 1) {
-          body += `<tr class="total"><td class="grp">小计</td>
+          // 注意：这里必须为「模型」列留一个空单元格，否则小计行的 9 个单元格
+          // 会错位到 10 列的表头下（数值整体右移一列）。
+          body += `<tr class="total"><td class="subtotal-label">小计</td><td class="grp"></td>
             <td class="grp">${fmtInt(t.requests)}</td><td>${fmtInt(t.cache_hit)}</td><td>${fmtInt(t.cache_miss)}</td><td>${fmtInt(t.output)}</td>
             <td class="grp">${fmtMoney(t.cost.cache_hit)}</td><td>${fmtMoney(t.cost.cache_miss)}</td><td>${fmtMoney(t.cost.output)}</td>
             <td class="grp">${fmtMoney(t.cost_total)}</td></tr>`;
