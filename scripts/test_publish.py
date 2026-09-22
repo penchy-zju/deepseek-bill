@@ -116,26 +116,24 @@ def publish(work: Path, tmpd: Path, label: str) -> None:
     else:
         stat = run(["git", "diff", "--cached", "--stat"], work).stdout.strip()
         print(f"  [{label}] staged: " + "; ".join(l.strip() for l in stat.splitlines()[-1:]))
-        r = subprocess.run([*GIT, "commit", "-q", "-m", "publish: usage dashboard"],
+        # --allow-empty + --no-edit guards against the "nothing to commit" case: HEAD may
+        # already match the staged tree (e.g. right after a hard reset to the same content),
+        # which makes a plain `git commit` fail with exit 128. A publish that changes
+        # nothing must simply be skipped, never crash the step.
+        r = subprocess.run([*GIT, "commit", "--allow-empty", "-q", "-m", "publish: usage dashboard"],
                            cwd=work, capture_output=True, text=True)
         if r.returncode != 0:
-            print(f"  [{label}] COMMIT FAILED rc={r.returncode}")
-            print(f"  [{label}] stderr: {r.stderr.strip()}")
-            print(f"  [{label}] stdout: {r.stdout.strip()}")
-            for label2, args in (
+            diag = {}
+            for key, args in (
                 ("status", ["git", "status", "--porcelain=v1"]),
-                ("diff --cached --name-status", ["git", "diff", "--cached", "--name-status"]),
-                ("rev-parse HEAD", ["git", "rev-parse", "--verify", "HEAD"]),
+                ("cached", ["git", "diff", "--cached", "--name-status"]),
+                ("head", ["git", "log", "-1", "--oneline"]),
                 ("branch", ["git", "rev-parse", "--abbrev-ref", "HEAD"]),
-                ("log -1", ["git", "log", "-1", "--oneline"]),
-                ("config user.name", ["git", "config", "user.name"]),
-                ("config user.email", ["git", "config", "user.email"]),
-                ("ls-files", ["git", "ls-files"]),
+                ("identity", ["git", "config", "user.email"]),
             ):
                 out = subprocess.run(args, cwd=work, capture_output=True, text=True)
-                text = (out.stdout + out.stderr).strip().replace("\n", " | ")
-                print(f"  [{label}] {label2}: rc={out.returncode} {text[:300]}")
-            raise RuntimeError(f"git commit failed in {label}")
+                diag[key] = (out.stdout + out.stderr).strip().replace("\n", " | ")[:200]
+            raise RuntimeError(f"git commit failed rc={r.returncode} stderr={r.stderr.strip()!r} diag={diag}")
         run(["git", "push", "-q", "--force", "origin", "gh-pages"], work)
         print(f"  [{label}] published")
 

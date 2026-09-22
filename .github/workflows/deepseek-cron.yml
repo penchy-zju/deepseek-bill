@@ -262,23 +262,13 @@ jobs:
       - name: Verify generated dashboard
         run: |
           set -euo pipefail
+          # 0) 自检 workflow 文件本身：语法坏掉的 workflow 会被 GitHub 直接忽略
+          #    （连 workflow_dispatch 都会消失），必须在推送前拦住。
+          python3 scripts/check_workflow.py
           # 1) 独立复算 CSV 聚合，并在 Node 里真实执行页面脚本来交叉校验
           node scripts/verify_site.js
           # 2) 在临时仓库里演练 gh-pages 发布逻辑（重复运行不应产生空提交）
-          python3 scripts/test_publish.py || {
-            echo "::warning::test_publish failed; dumping diagnostics"
-            python3 - <<'PY'
-import glob, os, subprocess, tempfile, shutil
-from pathlib import Path
-print("cwd:", os.getcwd())
-print("git version:", subprocess.run(["git","--version"],capture_output=True,text=True).stdout.strip())
-for k in ("GIT_DIR","GIT_WORK_TREE","GIT_INDEX_FILE","GIT_AUTHOR_NAME","GIT_COMMITTER_NAME"):
-    if k in os.environ: print(f"env {k}={os.environ[k]!r}")
-print("shallow:", Path(".git/shallow").exists())
-print("root entries:", sorted(p.name for p in Path(".").iterdir()))
-PY
-            exit 1
-          }
+          python3 scripts/test_publish.py
 
       - name: Commit dashboard
         id: page
@@ -321,7 +311,10 @@ PY
           rm -rf "$RUNNER_TEMP/site"
           mkdir -p "$RUNNER_TEMP/site/data"
           cp index.html site-data.json "$RUNNER_TEMP/site/"
-          cp data/amount-*.csv "$RUNNER_TEMP/site/data/"
+          # 用 if 包住：没有匹配文件时 cp 会以非 0 退出，在 set -e 下会中断整个步骤
+          if compgen -G "data/amount-*.csv" >/dev/null; then
+            cp data/amount-*.csv "$RUNNER_TEMP/site/data/"
+          fi
           # 关闭 Jekyll 处理，避免下划线开头的路径被忽略。
           touch "$RUNNER_TEMP/site/.nojekyll"
           echo "staged for publish: $(ls -A "$RUNNER_TEMP/site" | tr '\n' ' ')"
