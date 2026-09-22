@@ -19,6 +19,7 @@ Run: python scripts/test_publish.py
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import shutil
 import subprocess
@@ -59,8 +60,19 @@ def build(work: Path) -> None:
         raise RuntimeError(f"build failed: {r.stdout}\n{r.stderr}")
 
 
+def snapshot(root: Path) -> str:
+    """Same fingerprint scheme as the workflow: sorted 'path hash' lines, hashed again."""
+    h = hashlib.sha256()
+    for path in sorted(p for p in root.rglob("*") if p.is_file() and ".git" not in p.parts):
+        h.update(path.relative_to(root).as_posix().encode("utf-8"))
+        h.update(b" ")
+        h.update(hashlib.sha256(path.read_bytes()).hexdigest().encode("ascii"))
+        h.update(b"\n")
+    return h.hexdigest()
+
+
 def publish(work: Path, tmpd: Path, label: str) -> None:
-    """Command-for-command mirror of the workflow's publish step."""
+    """Mirror of the workflow's publish step, including the snapshot comparison."""
     # staging dir must be recreated from scratch every run
     staged_dir = tmpd / "site"
     shutil.rmtree(staged_dir, ignore_errors=True)
@@ -70,24 +82,34 @@ def publish(work: Path, tmpd: Path, label: str) -> None:
     for csv in (work / "data").glob("amount-*.csv"):
         shutil.copy(csv, staged_dir / "data" / csv.name)
     (staged_dir / ".nojekyll").touch()
+    want = snapshot(staged_dir)
 
     # ls-remote is the authoritative check: actions/checkout only fetches the
     # default branch, so a local origin/gh-pages ref may not exist.
     has_remote = run(["git", "ls-remote", "--exit-code", "--heads", "origin", "gh-pages"],
                      work, check_rc=False).returncode == 0
-    exists_local = run(["git", "rev-parse", "--verify", "--quiet", "refs/heads/gh-pages"],
-                       work, check_rc=False).returncode == 0
-    print(f"  [{label}] gh-pages: remote={has_remote} local={exists_local}")
+    print(f"  [{label}] gh-pages on remote: {has_remote}")
 
-    if has_remote or exists_local:
-        if has_remote:
-            run(["git", "fetch", "--quiet", "--force", "origin",
-                 "refs/heads/gh-pages:refs/remotes/origin/gh-pages"], work)
+    have = ""
+    if has_remote:
+        run(["git", "fetch", "--quiet", "--force", "origin",
+             "refs/heads/gh-pages:refs/remotes/origin/gh-pages"], work)
+        current = tmpd / "site-current"
+        shutil.rmtree(current, ignore_errors=True)
+        # materialise the existing gh-pages content without disturbing the main work tree
+        run(["git", "worktree", "add", "--force", "--detach", str(current), "origin/gh-pages"], work)
+        try:
+            have = snapshot(current)
+        finally:
+            run(["git", "worktree", "remove", "--force", str(current)], work, check_rc=False)
+
+    if have and have == want:
+        print(f"  [{label}] SKIPPED - gh-pages already matches the desired content")
+        return
+
+    if has_remote:
         run(["git", "checkout", "--force", "-B", "gh-pages"], work)
-        if has_remote:
-            run(["git", "reset", "--hard", "origin/gh-pages"], work)
-        else:
-            run(["git", "reset", "--hard"], work)
+        run(["git", "reset", "--hard", "origin/gh-pages"], work)
     else:
         run(["git", "checkout", "--force", "--orphan", "gh-pages"], work)
 
@@ -249,6 +271,32 @@ def main() -> int:
         check(gh_files(work) == [".nojekyll", "data/amount-2026-09-21.csv", "index.html", "site-data.json"],
               "stale CSV pruned from served site", str(gh_files(work)))
         check(gh_count(work) == 3, "gh-pages got a 3rd commit", str(gh_count(work)))
+
+        print("\n== run 6: gh-pages left stale (regression: must self-heal) ==")
+        # Reproduces the bug where the site silently stopped updating: gh-pages held older
+        # content while master was current, and because no *commit* happened in the run,
+        # the old "publish only if this run committed" gate skipped publishing forever.
+        stale_work = work / "data" / "amount-2026-09-99.csv"
+        stale_work.write_text((work / "data" / "amount-2026-09-21.csv").read_text(encoding="utf-8")
+                              .replace("2026-09-21", "2026-09-99"), encoding="utf-8", newline="\n")
+        build(work)
+        publish(work, tmpd, "run6-stale-inject")
+        check("data/amount-2026-09-99.csv" in gh_files(work), "gh-pages now holds the bogus 4th file",
+              str(gh_files(work)))
+        # now revert master to the 1-day set WITHOUT making any new commit, so this run has no
+        # "change flag" at all — exactly the situation that used to leave the site stale.
+        stale_work.unlink(missing_ok=True)
+        build(work)
+        gh_before = gh_head(work)
+        publish(work, tmpd, "run7-heal")
+        check(gh_head(work) != gh_before, "a publish happened even though this run made no commit")
+        check(gh_files(work) == [".nojekyll", "data/amount-2026-09-21.csv", "index.html", "site-data.json"],
+              "gh-pages self-healed back to the desired content", str(gh_files(work)))
+        # and once healed, further publishes must be skipped again
+        count_before = gh_count(work)
+        publish(work, tmpd, "run8-noop")
+        check(gh_count(work) == count_before, "after healing, no further publish commits are made",
+              f"{count_before} -> {gh_count(work)}")
 
         print("\n== serve the published site like GitHub Pages would ==")
         serve = tmp / "serve"
