@@ -145,6 +145,11 @@ def main() -> int:
     run(["git", "init", "--bare", "-q", str(remote)], tmp)
     # Clone without gh-pages, exactly like actions/checkout's default shallow fetch.
     run(["git", "clone", "-q", "--single-branch", "--branch", "master", str(REPO), str(work)], tmp)
+    # actions/checkout produces a *shallow* clone, and a shallow clone cannot be pushed
+    # to a fresh remote ("shallow update not allowed"). This test needs a pushable repo,
+    # so unshallow first — the publish logic itself is unaffected.
+    if (work / ".git" / "shallow").exists():
+        run([*GIT, "fetch", "--quiet", "--unshallow"], work)
     run([*GIT, "remote", "set-url", "origin", str(remote)], work)
     run([*GIT, "push", "-q", "origin", "master"], work)
     run([*GIT, "remote", "set-branches", "origin", "master"], work)
