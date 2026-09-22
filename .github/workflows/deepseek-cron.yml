@@ -180,8 +180,21 @@ jobs:
           TARGET="${DATA_DIR}/amount-${TARGET_DATE}.csv"
           mkdir -p "${DATA_DIR}"
 
-          # 去掉 UTF-8 BOM，避免某些消费方把首列表头读成 "\ufeffxxx"。
-          sed '1s/^\xEF\xBB\xBF//' "${AMOUNT_FILE}" > "${TARGET}"
+          # 三件事一起做：
+          # 1) 去掉 UTF-8 BOM，避免某些消费方把首列表头读成 "\ufeffxxx"；
+          # 2) 去掉行尾的 \r——接口压缩包里的 CSV 是 CRLF，若原样入库，
+          #    在 Windows 上 checkout 会因 autocrlf 变成 LF，导致同一份数据
+          #    在不同平台呈现出差异；统一成 LF 后结果与平台无关；
+          # 3) 对数据行做稳定排序——平台接口每次返回的行内容相同但**顺序会变**，
+          #    不排序的话每次运行都会产生一个“假变更”，从而每次都提交一次数据。
+          #    排序键取 (start_time, model, api_key, type)，既保证同一输入产出逐字节
+          #    相同的结果，又让文件保持按时间排列、方便人看。
+          read -r HEADER < "${AMOUNT_FILE}"
+          HEADER="${HEADER%$'\r'}"
+          {
+            printf '%s\n' "${HEADER}"
+            tail -n +2 "${AMOUNT_FILE}" | tr -d '\r' | sort -t, -k2,2 -k4,4 -k6,6 -k7,7
+          } > "${TARGET}"
 
           BYTES=$(wc -c < "${TARGET}")
           ROWS=$(( $(wc -l < "${TARGET}") - 1 ))
@@ -223,9 +236,9 @@ jobs:
 
           git add -- "${target_path}"
 
-          # 内容没变就不提交，避免产生空提交。
-          if git diff --cached --quiet; then
-            echo "No changes to commit for ${target_date} (file already up to date)."
+          # 内容没变就不提交，避免产生空提交（也不浪费一次 Pages 重新发布）。
+          if [ -z "$(git diff --cached --name-only)" ]; then
+            echo "Content unchanged for ${target_date}; nothing to commit."
             exit 0
           fi
 
@@ -237,13 +250,14 @@ jobs:
       # ---------- 用量看板：生成静态页面并提交 ----------
       # 纯标准库 Python 脚本，无需安装依赖。
       - name: Build usage dashboard
+        id: build
         run: |
           set -euo pipefail
           python3 scripts/build_site.py
           echo "--- generated files ---"
           ls -l index.html site-data.json
           echo "--- embedded data head ---"
-          python3 -c "import json;d=json.load(open('site-data.json'));print('dates:',d['dates']);print('default:',d['default_date']);print('keys per day:',{k:len(v) for k,v in d['data'].items()})"
+          python3 -c "import json;d=json.load(open('site-data.json',encoding='utf-8'));print('dates:',d['dates']);print('default:',d['default_date']);print('keys per day:',{k:len(v) for k,v in d['data'].items()})"
 
       - name: Verify generated dashboard
         run: |
@@ -255,6 +269,7 @@ jobs:
 
       - name: Commit dashboard
         id: page
+        if: steps.build.outcome == 'success'
         run: |
           set -euo pipefail
 
@@ -266,7 +281,8 @@ jobs:
           fi
 
           git add -- index.html site-data.json
-          if git diff --cached --quiet; then
+          # 生成结果没变化就不提交：否则每天都会多出一条“site: rebuild dashboard”的空提交。
+          if [ -z "$(git diff --cached --name-only)" ]; then
             echo "Dashboard already up to date; nothing to commit."
             exit 0
           fi
