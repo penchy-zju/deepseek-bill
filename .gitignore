@@ -4,5 +4,7 @@ usage/
 # 本地测试与临时产物
 *.zip
 _tmp/
+_shot/
+_sim*/
 .DS_Store
 Thumbs.db

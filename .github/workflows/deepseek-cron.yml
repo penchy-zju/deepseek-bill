@@ -25,6 +25,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Fetch daily usage export
+        id: fetch
         env:
           DEEPSEEK_PLATFORM_TOKEN: ${{ secrets.DEEPSEEK_PLATFORM_TOKEN }}
         run: |
@@ -205,11 +206,15 @@ jobs:
           rm -rf "${WORK_DIR}"
 
       - name: Commit and push changes
+        id: commit
         run: |
           set -euo pipefail
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 全流程统一用这个标记：任何一步真的产生了仓库变更就置为 true。
+          echo "changed=false" >> "$GITHUB_OUTPUT"
 
           if [ "${target_written}" != "true" ]; then
             echo "No data rows produced for ${target_date}; nothing to commit."
@@ -227,3 +232,74 @@ jobs:
           git status --short
           git commit -m "data: amount ${target_date}"
           git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      # ---------- 用量看板：生成静态页面并提交 ----------
+      # 纯标准库 Python 脚本，无需安装依赖。
+      - name: Build usage dashboard
+        run: |
+          set -euo pipefail
+          python3 scripts/build_site.py
+          echo "--- generated files ---"
+          ls -l index.html site-data.json
+          echo "--- embedded data head ---"
+          python3 -c "import json;d=json.load(open('site-data.json'));print('dates:',d['dates']);print('default:',d['default_date']);print('keys per day:',{k:len(v) for k,v in d['data'].items()})"
+
+      - name: Verify generated dashboard
+        run: |
+          set -euo pipefail
+          # 独立复算 + 在 Node 里真实执行页面脚本，交叉校验聚合结果
+          node scripts/verify_site.js
+
+      - name: Commit dashboard
+        id: page
+        run: |
+          set -euo pipefail
+
+          echo "dashboard_changed=false" >> "$GITHUB_OUTPUT"
+
+          if [ ! -f index.html ]; then
+            echo "::error::index.html was not generated"
+            exit 1
+          fi
+
+          git add -- index.html site-data.json
+          if git diff --cached --quiet; then
+            echo "Dashboard already up to date; nothing to commit."
+            exit 0
+          fi
+
+          git status --short
+          git commit -m "site: rebuild dashboard ${target_date}"
+          git push
+          echo "dashboard_changed=true" >> "$GITHUB_OUTPUT"
+
+      # ---------- 发布到 GitHub Pages ----------
+      # 推到 gh-pages 分支：GitHub Pages 会自动使用该分支，无需在仓库 Settings 里手动选择目录。
+      - name: Publish to gh-pages
+        if: steps.commit.outputs.changed == 'true' || steps.page.outputs.dashboard_changed == 'true'
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 从 master 取当前生成结果；gh-pages 上只保留站点文件。
+          cp index.html site-data.json "$RUNNER_TEMP/"
+          mkdir -p "$RUNNER_TEMP/data"
+          cp data/amount-*.csv "$RUNNER_TEMP/data/"
+          # 关闭 Jekyll 处理，避免下划线开头的路径被忽略。
+          touch "$RUNNER_TEMP/.nojekyll"
+
+          git switch --orphan gh-pages
+          git rm -r --cached . >/dev/null 2>&1 || true
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          cp -r "$RUNNER_TEMP/." .
+
+          git add -A
+          if git diff --cached --quiet; then
+            echo "gh-pages already up to date."
+            exit 0
+          fi
+          git commit -m "publish: usage dashboard $(date -u +%F)"
+          git push --force origin gh-pages

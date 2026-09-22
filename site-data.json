@@ -1,0 +1,99 @@
+{
+ "data": {
+  "2026-09-21": {
+   "sk-29aa1***********************9ea3": {
+    "masked": "sk-29aa1***********************9ea3",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 1343360,
+      "cache_miss": 607153,
+      "cost": {
+       "cache_hit": "0.34823040",
+       "cache_miss": "5.3926380",
+       "output": "0.9721350"
+      },
+      "cost_total": "6.71300340",
+      "output": 38935,
+      "requests": 18
+     }
+    },
+    "name": "贺海晏"
+   },
+   "sk-63b33***********************c1e8": {
+    "masked": "sk-63b33***********************c1e8",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 20691072,
+      "cache_miss": 357602,
+      "cost": {
+       "cache_hit": "4.81161600",
+       "cache_miss": "1.8735030",
+       "output": "2.6491860"
+      },
+      "cost_total": "9.33430500",
+      "output": 150577,
+      "requests": 99
+     }
+    },
+    "name": "陈巍文"
+   },
+   "sk-87071***********************7263": {
+    "masked": "sk-87071***********************7263",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 1230720,
+      "cache_miss": 124758,
+      "cost": {
+       "cache_hit": "0.04922880",
+       "cache_miss": "0.249516",
+       "output": "0.322176"
+      },
+      "cost_total": "0.62092080",
+      "output": 40272,
+      "requests": 14
+     },
+     "deepseek-v4-pro": {
+      "cache_hit": 2711040,
+      "cache_miss": 999958,
+      "cost": {
+       "cache_hit": "0.64275840",
+       "cache_miss": "6.7927590",
+       "output": "1.8334890"
+      },
+      "cost_total": "9.26900640",
+      "output": 85454,
+      "requests": 28
+     }
+    },
+    "name": "祁殷俏"
+   },
+   "sk-9c064***********************d8c9": {
+    "masked": "sk-9c064***********************d8c9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 108472832,
+      "cache_miss": 264156,
+      "cost": {
+       "cache_hit": "3.75512064",
+       "cache_miss": "0.497652",
+       "output": "1.626452"
+      },
+      "cost_total": "5.87922464",
+      "output": 229053,
+      "requests": 275
+     }
+    },
+    "name": "金哲慧"
+   }
+  }
+ },
+ "dates": [
+  "2026-09-21"
+ ],
+ "default_date": "2026-09-21",
+ "generated_at": "2026-09-22 03:30:18 UTC",
+ "source_files": [
+  "amount-2026-09-21.csv"
+ ],
+ "warnings": []
+}
