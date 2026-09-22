@@ -14,7 +14,9 @@ const http = require("http");
 const { spawn } = require("child_process");
 
 const CHROME = process.argv[2];
-const PAGE = "file:///" + process.argv[3].replace(/\\/g, "/");
+const TARGET = process.argv[3];
+// accept either a local file path or an http(s) URL
+const PAGE = /^https?:\/\//i.test(TARGET) ? TARGET : "file:///" + TARGET.replace(/\\/g, "/");
 const PORT = 9342;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const getJSON = (p) => new Promise((res, rej) => {
@@ -45,7 +47,12 @@ const getJSON = (p) => new Promise((res, rej) => {
 
   await send("Page.enable"); await send("Runtime.enable");
   await send("Page.navigate", { url: PAGE });
-  await sleep(2500);
+  // wait until the tables are actually rendered (remote pages need longer)
+  for (let i = 0; i < 40; i++) {
+    const ready = await ev(`!!document.querySelector('#compareTable tbody tr') && !!document.querySelector('#detailTable tbody tr')`);
+    if (ready) break;
+    await sleep(500);
+  }
 
   const measure = (tableId) => `(() => {
     const table = document.getElementById('${tableId}');
