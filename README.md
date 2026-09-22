@@ -62,9 +62,10 @@
 
 ### 发布方式
 
-站点发布到 `gh-pages` 分支（内容 = `index.html` + `site-data.json` + `data/*.csv` + `.nojekyll`）。选择这种方式的理由：**不需要在仓库 Settings 里手动选择发布目录**，GitHub 会自动把 `gh-pages` 分支作为 Pages 源。
+站点发布到 `gh-pages` 分支（内容 = `index.html` + `site-data.json` + `data/*.csv` + `.nojekyll`）。选择这种方式的理由：站点文件与数据仓库隔离，`gh-pages` 每次都是干净重建，不会混入源码。
 
-- 首次运行后如果 Pages 还没生效，去 **Settings → Pages** 确认 Source 是 `Deploy from a branch` / 分支 `gh-pages` / 目录 `/ (root)`，保存即可
+- **Pages 已启用**：Source = `Deploy from a branch`，分支 `gh-pages`，目录 `/ (root)`；页面地址 <https://penchy-zju.github.io/deepseek-bill/>
+- 只有数据或页面内容真的变化时才会重新发布；没有变化时日志里 `Publish to gh-pages` 显示 `skipped`，属正常
 - 仓库是 **public**，所以看板对所有人可访问；若不想公开，可把仓库改为 private（Pages 可用性取决于你的 GitHub 套餐）
 
 ---
@@ -103,8 +104,11 @@ Workflow 只需要这一个 Secret，不要把它写进代码或提交到仓库�
 
 - 成功时，`data/` 下会出现对应日期的 CSV，并有一条由 `github-actions[bot]` 提交的 commit，提交信息形如 `data: amount 2026-09-21`
 - 日志里会打印 `Target usage date`、`START`、`END` 以及解压出来的文件清单，可据此确认区间与文件名
+- 接着会生成看板并把站点发布到 `gh-pages` 分支；日志里 `Publish to gh-pages` 这一步显示 `success` 或 `skipped` 都属正常（无变化时会跳过）
 
-**关于“空提交”**：如果目标日期的数据与仓库中已有文件完全一致（例如一天内重复手动触发），Workflow 会跳过提交并正常退出，不会产生空 commit。如果当天接口返回的 CSV 只有表头、没有数据行，同样不会提交空文件（日志中给出一条 warning）。
+**关于“空提交”**：如果目标日期的数据与仓库中已有文件完全一致（例如一天内重复手动触发），Workflow 会跳过数据提交与看板提交，`Publish to gh-pages` 直接显示 skipped，**不会产生任何空 commit**。如果当天接口返回的 CSV 只有表头、没有数据行，同样不会提交空文件（日志中给出一条 warning）。
+
+> 为什么需要特别处理：这个导出接口每次返回的**行内容相同但顺序会变**，接口压缩包里的 CSV 又是 CRLF。如果原样入库，同一份数据每次运行都会呈现差异，从而每天产生一次“假提交”。因此抓取步骤会对数据行做稳定排序（按 `start_time, model, api_key, type`）并统一成 LF，使得同一份数据逐字节可复现。
 
 ---
 
@@ -117,9 +121,10 @@ data/
 └── amount-2026-09-21.csv
 ```
 
-- 文件内容即压缩包中 `amount` CSV 的原始内容，**仅去掉了 UTF-8 BOM**，未做其它改写
+- 文件内容即压缩包中 `amount` CSV 的数据，处理方式为：**去掉 UTF-8 BOM、统一为 LF 行尾、按 `(start_time, model, api_key, type)` 稳定排序**，字段与数值原样保留，不做其它改写
 - 压缩包内的 `cost` 文件被忽略
 - 文件名模糊匹配：`*amount*.csv` 或 `*usage*.csv`，并显式排除 `*cost*`。若匹配到 0 个或 2 个以上候选（平台改了打包结构），Workflow 会报错退出而不是猜
+- 若某天确实没有数据（接口只返回表头），不会生成文件，也不会留下空文件
 
 ---
 
@@ -188,6 +193,9 @@ unzip -l usage.zip   # 确认内部文件名
 ### 看板相关脚本
 
 ```bash
+# 校验 0：workflow 文件本身能否被解析（语法坏掉的 workflow 会被 GitHub 直接忽略）
+python3 scripts/check_workflow.py
+
 # 重新生成看板（只依赖 Python 标准库）
 python3 scripts/build_site.py
 
@@ -197,6 +205,8 @@ node scripts/verify_site.js
 # 校验 2：在临时仓库里演练 gh-pages 发布（含重复运行不应产生空提交、旧文件应被清理）
 python3 scripts/test_publish.py
 ```
+
+前三个（`check_workflow.py` + `verify_site.js` + `test_publish.py`）每次运行都会在 CI 里执行一遍，任何一项失败都会阻止发布。
 
 另外两个**仅本地**使用的脚本（需要本机有 Chrome，且 `npm i ws` 提供 WebSocket）用于检查真实渲染效果，CI 里不跑：
 
@@ -213,5 +223,15 @@ node scripts/check_phone.js "/path/to/chrome" "$PWD/index.html"
 1. `scripts/build_site.py` 里 `METRICS` 字典把接口的 `type` 映射到内部字段；新指标先加到这里
 2. 聚合结果通过 `to_jsonable()` 落到 `site-data.json`，再内嵌进 `index.html`
 3. 页面 JS 里 `mergeModels()` / `metricsOf()` 负责跨 Key、跨模型合并（**不要**用 `Object.assign` 合并模型，同名模型会被覆盖而不是相加）
-4. 改完必须让 `verify_site.js` 和 `test_publish.py` 都通过——它们会独立复算，能抓出聚合写错
-5. **不要**把构建时间戳之类的非确定性内容写进产物：那会让每次构建都产生差异，从而每次都提交一次假更新
+4. 改完必须让 `check_workflow.py`、`verify_site.js` 和 `test_publish.py` 都通过——后两个会独立复算，能抓出聚合写错
+5. **不要**把构建时间戳之类的非确定性内容写进产物：那会让每次构建都产生差异，从而每次都提交一次假更新。产物里用的是输入 CSV 的 sha256 指纹（页面副标题的 `数据指纹`）
+6. 改 `.github/workflows/*.yml` 后**一定要跑** `check_workflow.py`：YAML 一坏，GitHub 会静默忽略整个 workflow（连 `workflow_dispatch` 都会消失），很难排查
+
+### 这个仓库踩过的坑（避免重复）
+
+- **接口返回的行顺序不稳定**：不排序就会每天产生“假变更”，进而每天一次空提交 → 已在抓取步骤做稳定排序
+- **接口 CSV 是 CRLF**：跨平台会出现差异 → 已统一为 LF
+- **`GITHUB_ENV` 的变量在写入它的那个 step 内不可见**：后续 step 必须先取到本地变量再用
+- **`actions/checkout` 默认只抓默认分支且是 shallow clone**：本地看不到 `origin/gh-pages`，且 shallow 仓库无法 push 到新远端 → 判断分支是否存在要用 `git ls-remote`
+- **`git checkout -B` 不会重建索引**：切到 `gh-pages` 后如果索引里还留着 `master` 的树，`git add -A` 会把 `README`、`scripts/` 等“删除”一起提交上去 → 切分支后要 `git reset --hard`
+
