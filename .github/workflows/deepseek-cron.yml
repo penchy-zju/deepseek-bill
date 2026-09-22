@@ -248,8 +248,10 @@ jobs:
       - name: Verify generated dashboard
         run: |
           set -euo pipefail
-          # 独立复算 + 在 Node 里真实执行页面脚本，交叉校验聚合结果
+          # 1) 独立复算 CSV 聚合，并在 Node 里真实执行页面脚本来交叉校验
           node scripts/verify_site.js
+          # 2) 在临时仓库里演练 gh-pages 发布逻辑（重复运行不应产生空提交）
+          python3 scripts/test_publish.py
 
       - name: Commit dashboard
         id: page
@@ -285,24 +287,53 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # 从 master 取当前生成结果；gh-pages 上只保留站点文件。
-          cp index.html site-data.json "$RUNNER_TEMP/"
-          mkdir -p "$RUNNER_TEMP/data"
-          cp data/amount-*.csv "$RUNNER_TEMP/data/"
+          # 必须先清空暂存目录：否则上一次运行留下的旧日期 CSV 会被一起复制回站点，
+          # 让已经不该存在的文件“复活”。
+          rm -rf "$RUNNER_TEMP/site"
+          mkdir -p "$RUNNER_TEMP/site/data"
+          cp index.html site-data.json "$RUNNER_TEMP/site/"
+          cp data/amount-*.csv "$RUNNER_TEMP/site/data/"
           # 关闭 Jekyll 处理，避免下划线开头的路径被忽略。
-          touch "$RUNNER_TEMP/.nojekyll"
+          touch "$RUNNER_TEMP/site/.nojekyll"
+          echo "staged for publish: $(ls -A "$RUNNER_TEMP/site" | tr '\n' ' ')"
+          echo "staged csv count : $(ls -1 "$RUNNER_TEMP/site/data" | wc -l)"
 
           # 切分支：--force 会一并丢弃工作区里被改动的已跟踪文件，
           # 因此不需要（也不应该）用 git clean——那会把 index.html/site-data.json
           # 之外的未跟踪目录一起删掉，且孤儿分支上没有 .gitignore 时更危险。
-          if git rev-parse --verify --quiet origin/gh-pages >/dev/null; then
-            git fetch --quiet origin gh-pages
-            git checkout --force -B gh-pages origin/gh-pages
+          #
+          # 注意：actions/checkout 默认只抓取默认分支，本地没有 origin/gh-pages，
+          # 所以必须直接问远端（ls-remote），不能靠本地 ref 判断 gh-pages 是否存在。
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            echo "gh-pages exists on remote; reusing it"
+            git fetch --quiet --force origin refs/heads/gh-pages:refs/remotes/origin/gh-pages
+            # 用 reset --hard 而不是只靠 checkout --force：
+            # checkout -B 在分支已存在时不会重建索引，索引里可能仍留着 master 的树，
+            # 那样后面 git add -A 会把 README/scripts 等“删除”一起提交到 gh-pages。
+            git checkout --force -B gh-pages
+            git reset --hard origin/gh-pages
           else
+            echo "gh-pages does not exist yet; creating an orphan branch"
             git checkout --force --orphan gh-pages
           fi
           git rm -r --cached . >/dev/null 2>&1 || true
           find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
-          cp -r "$RUNNER_TEMP/." .
+          cp -r "$RUNNER_TEMP/site/." .
+
+          # 自检：站点上的 CSV 数量必须与生成页面所用的天数一致，
+          # 否则说明暂存/清理逻辑有问题（例如旧文件未清干净）。
+          EXPECTED=$(python3 -c "import json;print(len(json.load(open('site-data.json',encoding='utf-8'))['dates']))" 2>/dev/null || echo "")
+          case "${EXPECTED}" in
+            ''|*[!0-9]*)
+              echo "::error::could not read the day count from site-data.json (got '${EXPECTED}')"
+              exit 1
+              ;;
+          esac
+          ACTUAL=$(find data -name 'amount-*.csv' | wc -l)
+          if [ "${EXPECTED}" != "${ACTUAL}" ]; then
+            echo "::error::stale data on gh-pages: ${ACTUAL} csv file(s) staged but the page only covers ${EXPECTED} day(s)"
+            exit 1
+          fi
 
           git add -A
           if git diff --cached --quiet; then

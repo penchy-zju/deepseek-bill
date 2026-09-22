@@ -1,6 +1,10 @@
 # deepseek-bill
 
-每天北京时间凌晨 1:00 自动抓取 DeepSeek 平台**前一天**的用量账单，把压缩包里的 `amount` CSV 解出来并按日期归档到本仓库。
+每天北京时间凌晨 1:00 自动抓取 DeepSeek 平台**前一天**的用量账单，把压缩包里的 `amount` CSV 解出来并按日期归档到本仓库，同时把结果渲染成一个静态用量看板发布到 GitHub Pages。
+
+- 数据仓库路径：`data/amount-YYYY-MM-DD.csv`
+- 用量看板：`index.html`（数据内嵌，发布到 `gh-pages` 分支）
+- 看板地址：`https://penchy-zju.github.io/deepseek-bill/`
 
 ---
 
@@ -13,11 +17,59 @@
 
 例如北京时间 2026-09-22 01:00 触发时，抓取 2026-09-21 全天数据，写入 `data/amount-2026-09-21.csv`。
 
+每次运行依次做四件事：
+
+1. 拉取前一天账单 → 写入 `data/amount-YYYY-MM-DD.csv`（内容不变则不提交）
+2. 用 `scripts/build_site.py` 重新生成看板 `index.html` + `site-data.json`
+3. 跑校验：`scripts/verify_site.js`（独立复算 + 在 Node 里执行页面脚本交叉比对）、`scripts/test_publish.py`（在临时仓库里演练发布逻辑）
+4. 把站点文件发布到 `gh-pages` 分支（GitHub Pages 自动生效）
+
 > 时间计算不依赖 `TZ=Asia/Shanghai`（该变量在部分环境不可靠），而是用纯 epoch 算术推导，并在写数据前做三重自检：区间必须正好 86400 秒、区间两端必须落在 UTC 16:00（= 北京时间 00:00）、归档日期标签必须与 `start` 对应的北京日期一致。任一不满足即报错退出，不会写错日期的数据。
 
 ---
 
-## 二、一次性配置
+## 二、用量看板
+
+### 看板能看什么
+
+页面顶部是当天总览，下面分「按模型明细」和「全部 API Key 对比」两张表：
+
+| 指标 | 含义 |
+| --- | --- |
+| 调用次数 | 接口 `request_count` 求和 |
+| 缓存命中 tokens | `input_cache_hit_tokens`，即命中上下文的输入量 |
+| 缓存未命中 tokens | `input_cache_miss_tokens`，即未命中、按全价计费的输入量 |
+| 输出 tokens | `output_tokens`，模型生成的量 |
+| 各项费用 / 费用合计 | 见下方「费用口径」 |
+| 输入缓存命中率 | `命中 ÷ (命中 + 未命中)`，反映上下文复用程度 |
+
+**筛选**：顶部 `API Key` 下拉可以切换「全部」或某一个 Key，切换后总览卡片和明细表都会跟着变；`日期` 下拉可以回看历史某一天（默认选中最近一个已结束的日期）。
+
+### 费用口径（重要）
+
+费用**不是**硬编码价目表算出来的，而是逐行用接口返回的 `price × amount` 累加：
+
+- 接口返回的每行都带 `price` 和 `amount`，`price` **已经包含平台的优惠时段折扣**——同一模型同一天会出现两档单价（例如 `deepseek-v4-pro` 输出全价 `0.000027`、优惠价 `0.0000135`），所以无需再手工打折
+- 金额用 Python `Decimal` 累加，避免浮点误差（数据里单行费用小到 `1.4e-7`）
+- 页面显示时自适应精度：小于 1 显示 6 位小数，小于 0.0001 显示 8 位并去掉末尾零，避免小费用被显示成 `$0.0000`
+
+### 数据口径与已知限制
+
+- `api_key` 在接口返回里**已被平台掩码**（形如 `sk-63b33***c1e8`），所以看板用「名称 + 掩码」共同标识一个 Key；掩码相同即视为同一个 Key。原始明文 Key 不会被写入仓库，也不会出现在页面上
+- 看板只包含**已归档的 `amount` 明细**：接口没返回的小时不会出现在数据里（例如某天只有 08:00–23:00 有数据，就只统计这些时段）
+- 数据按**小时粒度**返回，看板展示的是当天所有小时聚合后的结果；要看逐小时明细请直接看 `data/amount-*.csv`
+- 页面是**纯静态**的：数据以 JSON 形式内嵌在 `index.html` 里，不依赖任何后端；`site-data.json` 是对外暴露的同一份数据，方便自己写脚本消费
+
+### 发布方式
+
+站点发布到 `gh-pages` 分支（内容 = `index.html` + `site-data.json` + `data/*.csv` + `.nojekyll`）。选择这种方式的理由：**不需要在仓库 Settings 里手动选择发布目录**，GitHub 会自动把 `gh-pages` 分支作为 Pages 源。
+
+- 首次运行后如果 Pages 还没生效，去 **Settings → Pages** 确认 Source 是 `Deploy from a branch` / 分支 `gh-pages` / 目录 `/ (root)`，保存即可
+- 仓库是 **public**，所以看板对所有人可访问；若不想公开，可把仓库改为 private（Pages 可用性取决于你的 GitHub 套餐）
+
+---
+
+## 三、一次性配置
 
 ### 1. 获取 `userToken`
 
@@ -43,7 +95,7 @@ Workflow 只需要这一个 Secret，不要把它写进代码或提交到仓库�
 
 ---
 
-## 三、手动触发测试
+## 四、手动触发测试
 
 **仓库 → Actions → 左侧 `DeepSeek Daily Usage Export` → 右侧 `Run workflow` → 选择分支 → `Run workflow`**
 
@@ -56,7 +108,7 @@ Workflow 只需要这一个 Secret，不要把它写进代码或提交到仓库�
 
 ---
 
-## 四、数据归档路径
+## 五、数据归档路径
 
 ```
 data/
@@ -71,7 +123,7 @@ data/
 
 ---
 
-## 五、风险与维护提醒
+## 六、风险与维护提醒
 
 ### ⚠️ `userToken` 是会话凭证，会过期
 
@@ -103,7 +155,7 @@ data/
 
 ---
 
-## 六、本地自测（可选）
+## 七、本地自测与开发（可选）
 
 Workflow 的三个脚本块只依赖 `bash`、`curl`、`unzip`、`date`（GNU date）。下面这段与 Workflow 内的算法完全一致，可直接在 Linux/WSL/macOS 上验证时间区间：
 
@@ -132,3 +184,34 @@ curl -sS -D - -o usage.zip \
   -H "Authorization: Bearer <TOKEN>"
 unzip -l usage.zip   # 确认内部文件名
 ```
+
+### 看板相关脚本
+
+```bash
+# 重新生成看板（只依赖 Python 标准库）
+python3 scripts/build_site.py
+
+# 校验 1：独立复算 CSV + 在 Node 里真实执行页面脚本，交叉比对每个 Key/模型的数字
+node scripts/verify_site.js
+
+# 校验 2：在临时仓库里演练 gh-pages 发布（含重复运行不应产生空提交、旧文件应被清理）
+python3 scripts/test_publish.py
+```
+
+另外两个**仅本地**使用的脚本（需要本机有 Chrome，且 `npm i ws` 提供 WebSocket）用于检查真实渲染效果，CI 里不跑：
+
+```bash
+# 用 CDP 检查页面在真实浏览器中的渲染、筛选交互与计算样式
+node scripts/browser_check.js "/path/to/chrome" "$PWD/index.html"
+
+# 检查掩码 Key 是否被浏览器当成电话号码自动着色
+node scripts/check_phone.js "/path/to/chrome" "$PWD/index.html"
+```
+
+### 给这个仓库加新指标时
+
+1. `scripts/build_site.py` 里 `METRICS` 字典把接口的 `type` 映射到内部字段；新指标先加到这里
+2. 聚合结果通过 `to_jsonable()` 落到 `site-data.json`，再内嵌进 `index.html`
+3. 页面 JS 里 `mergeModels()` / `metricsOf()` 负责跨 Key、跨模型合并（**不要**用 `Object.assign` 合并模型，同名模型会被覆盖而不是相加）
+4. 改完必须让 `verify_site.js` 和 `test_publish.py` 都通过——它们会独立复算，能抓出聚合写错
+5. **不要**把构建时间戳之类的非确定性内容写进产物：那会让每次构建都产生差异，从而每次都提交一次假更新
