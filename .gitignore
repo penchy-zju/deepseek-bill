@@ -6,5 +6,7 @@ usage/
 _tmp/
 _shot/
 _sim*/
+_*.sh
+_*.py
 .DS_Store
 Thumbs.db

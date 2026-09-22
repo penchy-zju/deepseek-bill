@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import csv
 import glob
+import hashlib
 import json
 import os
 from collections import defaultdict
@@ -112,15 +113,21 @@ def build() -> dict:
     warnings: list[str] = []
     files = sorted(glob.glob(DATA_GLOB))
     dates: dict = {}
+    digest = hashlib.sha256()
     for path in files:
         date = date_from_path(path)
+        # 把输入内容纳入指纹：数据不变 -> 指纹不变 -> 生成结果逐字节相同，
+        # 这样“无变化时不产生空提交”的判定才成立（绝不能嵌入构建时间戳，
+        # 那会让每次构建都产生差异，从而每次都提交一次假更新）。
+        with open(path, "rb") as fh:
+            digest.update(fh.read())
         parsed = parse_amount_csv(path, warnings)
         if parsed:
             dates[date] = parsed
 
     available = sorted(dates)
     return {
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "data_version": digest.hexdigest()[:12],
         "default_date": default_date(available),
         "dates": available,
         "data": dates,
@@ -131,7 +138,7 @@ def build() -> dict:
 
 def to_jsonable(payload: dict) -> dict:
     """Decimal -> str, keep full precision (JS will parse to Number)."""
-    out = {"generated_at": payload["generated_at"], "default_date": payload["default_date"],
+    out = {"data_version": payload["data_version"], "default_date": payload["default_date"],
            "dates": payload["dates"], "warnings": payload["warnings"],
            "source_files": payload["source_files"], "data": {}}
     for date, keys in payload["data"].items():
@@ -487,7 +494,7 @@ function init() {
 
   document.getElementById('subtitle').innerHTML =
     `数据日期：<strong>${SITE.default_date}</strong> · 共 ${SITE.dates.length} 天（${SITE.dates[0]} ~ ${SITE.dates[SITE.dates.length-1]}） · ` +
-    `生成于 ${SITE.generated_at}`;
+    `数据指纹 <code>${SITE.data_version}</code>`;
   document.getElementById('limits').innerHTML = `
     <ul style="margin:6px 0 0;padding-left:18px">
       <li>数据来自 DeepSeek 平台内部导出接口，<strong>只包含已归档的 <code>amount</code> 明细</strong>；接口未返回的小时不会出现在数据中。</li>

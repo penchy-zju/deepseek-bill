@@ -87,11 +87,11 @@
    }
   }
  },
+ "data_version": "186d48af91f8",
  "dates": [
   "2026-09-21"
  ],
  "default_date": "2026-09-21",
- "generated_at": "2026-09-22 03:30:18 UTC",
  "source_files": [
   "amount-2026-09-21.csv"
  ],

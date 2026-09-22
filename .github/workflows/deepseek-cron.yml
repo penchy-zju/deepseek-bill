@@ -291,7 +291,15 @@ jobs:
           # 关闭 Jekyll 处理，避免下划线开头的路径被忽略。
           touch "$RUNNER_TEMP/.nojekyll"
 
-          git switch --orphan gh-pages
+          # 切分支：--force 会一并丢弃工作区里被改动的已跟踪文件，
+          # 因此不需要（也不应该）用 git clean——那会把 index.html/site-data.json
+          # 之外的未跟踪目录一起删掉，且孤儿分支上没有 .gitignore 时更危险。
+          if git rev-parse --verify --quiet origin/gh-pages >/dev/null; then
+            git fetch --quiet origin gh-pages
+            git checkout --force -B gh-pages origin/gh-pages
+          else
+            git checkout --force --orphan gh-pages
+          fi
           git rm -r --cached . >/dev/null 2>&1 || true
           find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
           cp -r "$RUNNER_TEMP/." .
