@@ -265,7 +265,20 @@ jobs:
           # 1) 独立复算 CSV 聚合，并在 Node 里真实执行页面脚本来交叉校验
           node scripts/verify_site.js
           # 2) 在临时仓库里演练 gh-pages 发布逻辑（重复运行不应产生空提交）
-          python3 scripts/test_publish.py
+          python3 scripts/test_publish.py || {
+            echo "::warning::test_publish failed; dumping diagnostics"
+            python3 - <<'PY'
+import glob, os, subprocess, tempfile, shutil
+from pathlib import Path
+print("cwd:", os.getcwd())
+print("git version:", subprocess.run(["git","--version"],capture_output=True,text=True).stdout.strip())
+for k in ("GIT_DIR","GIT_WORK_TREE","GIT_INDEX_FILE","GIT_AUTHOR_NAME","GIT_COMMITTER_NAME"):
+    if k in os.environ: print(f"env {k}={os.environ[k]!r}")
+print("shallow:", Path(".git/shallow").exists())
+print("root entries:", sorted(p.name for p in Path(".").iterdir()))
+PY
+            exit 1
+          }
 
       - name: Commit dashboard
         id: page
