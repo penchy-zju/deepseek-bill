@@ -248,8 +248,13 @@ ok(compareCounts.every((n) => n === 9 || n === 10),
 ok(compareCounts.filter((n) => n === 10).length === compareCounts.length - 1,
    "compare table: exactly one row (the rowspan continuation) has fewer cells",
    `counts = ${compareCounts.join(",")}`);
-ok(compare.includes('>小计</td><td class="grp"></td>'),
+ok(compare.includes('<td class="grp model-cell"></td>'),
    "小计 row keeps an empty 模型 cell so its values stay under the right headers");
+// alignment must be decided by semantic class, never by DOM position: in a rowspan
+// continuation row the 2nd child is a numeric cell, so :nth-child(2) would left-align
+// it and make 调用次数 inconsistent within the same column.
+ok(!/#compareTable[^{]*nth-child\(2\)/.test(compare),
+   "model column alignment does not rely on :nth-child(2)");
 
 // the 小计 row's numbers must equal the sum of the two model rows above it
 const subtotalRow = (compare.match(/<tr class="total">[\s\S]*?<\/tr>/g) || [])

@@ -208,9 +208,16 @@ python3 scripts/test_publish.py
 
 前三个（`check_workflow.py` + `verify_site.js` + `test_publish.py`）每次运行都会在 CI 里执行一遍，任何一项失败都会阻止发布。
 
-另外两个**仅本地**使用的脚本（需要本机有 Chrome，且 `npm i ws` 提供 WebSocket）用于检查真实渲染效果，CI 里不跑：
+另外几个**仅本地**使用的脚本（需要本机有 Chrome，且 `npm i ws` 提供 WebSocket）用于检查真实渲染效果，CI 里不跑：
 
 ```bash
+# 逐列测量渲染后的对齐情况：同一列的所有单元格右缘必须一致、text-align 必须一致
+# 这是唯一能抓出「列错位 / 同列对齐不一致」的检查（单元测试抓不到）
+node scripts/measure_columns.js "/path/to/chrome" "$PWD/index.html"
+
+# 整页 2x 截图，用来肉眼检查版式
+node scripts/shot_full.js "/path/to/chrome" "$PWD/index.html" "$PWD/_shot/full.png"
+
 # 用 CDP 检查页面在真实浏览器中的渲染、筛选交互与计算样式
 node scripts/browser_check.js "/path/to/chrome" "$PWD/index.html"
 
@@ -226,6 +233,7 @@ node scripts/check_phone.js "/path/to/chrome" "$PWD/index.html"
 4. 改完必须让 `check_workflow.py`、`verify_site.js` 和 `test_publish.py` 都通过——后两个会独立复算，能抓出聚合写错
 5. **不要**把构建时间戳之类的非确定性内容写进产物：那会让每次构建都产生差异，从而每次都提交一次假更新。产物里用的是输入 CSV 的 sha256 指纹（页面副标题的 `数据指纹`）
 6. 改 `.github/workflows/*.yml` 后**一定要跑** `check_workflow.py`：YAML 一坏，GitHub 会静默忽略整个 workflow（连 `workflow_dispatch` 都会消失），很难排查
+7. 动表格结构后跑一次 `measure_columns.js`：表格有跨行（rowspan）单元格，**不要用 `:nth-child()` / `:first-child` 决定对齐**——续行里第 N 个 DOM 子元素对应的不是第 N 列，会让同一列里有的左对齐、有的右对齐。对齐一律按语义类（如 `.model-cell` / `.subtotal-label`）来定
 
 ### 这个仓库踩过的坑（避免重复）
 
@@ -234,4 +242,6 @@ node scripts/check_phone.js "/path/to/chrome" "$PWD/index.html"
 - **`GITHUB_ENV` 的变量在写入它的那个 step 内不可见**：后续 step 必须先取到本地变量再用
 - **`actions/checkout` 默认只抓默认分支且是 shallow clone**：本地看不到 `origin/gh-pages`，且 shallow 仓库无法 push 到新远端 → 判断分支是否存在要用 `git ls-remote`
 - **`git checkout -B` 不会重建索引**：切到 `gh-pages` 后如果索引里还留着 `master` 的树，`git add -A` 会把 `README`、`scripts/` 等“删除”一起提交上去 → 切分支后要 `git reset --hard`
+- **带 rowspan 的表格里，DOM 位置 ≠ 视觉列号**：续行的第 1 个子元素其实是第 2 列。用 `:first-child` / `:nth-child(n)` 决定对齐或列归属都会出错（曾导致「调用次数」列里同列数值一部分左对齐、一部分右对齐）→ 一律用语义类
+- **只靠单元格数量检查不足以发现“列错位”**：必须测量渲染后的实际几何边缘 → 用 `scripts/measure_columns.js`
 

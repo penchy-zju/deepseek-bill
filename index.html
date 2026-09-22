@@ -44,18 +44,30 @@
   h2 { font-size:15px; margin:0 0 12px; }
   .tablewrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
   table { border-collapse:collapse; width:100%; font-size:13.5px; font-variant-numeric:tabular-nums; }
+  /* 所有单元格统一：数字列右对齐（数字等宽，右缘必然对齐），第一列文字左对齐 */
   th, td { padding:9px 11px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
-  th { color:var(--muted); font-weight:600; font-size:12px; text-align:right; background:transparent; }
-  th:first-child, td:first-child { text-align:left; }
-  /* 「全部 API Key 对比」表里前两列是文字（API Key / 模型）：统一左对齐。
-     否则模型名会按 right 对齐，同一列里不同长度的名字左右边缘参差；
-     而表头「模型」是左对齐的，正文却右对齐，看起来也对不上。 */
-  #compareTable th:nth-child(1), #compareTable td:nth-child(1),
-  #compareTable th:nth-child(2), #compareTable td:nth-child(2) { text-align:left; }
-  /* 小计行：模型列留空，让右侧各数值与上方各列严格对齐 */
+  th { color:var(--muted); font-weight:600; font-size:12px; text-align:right; background:transparent;
+       border-bottom:2px solid var(--line); }
+  /* 对齐规则（统一口径，避免同一列里有的左、有的右）：
+     1) 默认所有单元格右对齐 —— 数字等宽，右缘自然对齐；
+     2) 第 1 列是文字（模型 / API Key / 小计 / 合计）→ 左对齐；
+     3) 「全部 API Key 对比」的模型列也是文字 → 用 .model-cell 标记后左对齐。
+     注意：第 2、3 条必须用语义选择器，不能用 :nth-child()：
+     跨行（rowspan）单元格的续行里，第 2 个 DOM 子元素其实是「调用次数」数字格，
+     按位置选会把该列数字变成左对齐，与同列其它行不一致。 */
+  th:nth-child(1), td:nth-child(1) { text-align:left; }
+  #compareTable th.model-cell, #compareTable td.model-cell { text-align:left; }
   tr.total td.subtotal-label { text-align:left; color:var(--ink); }
   tbody tr:hover { background:var(--accent-soft); }
-  tr.total td { font-weight:650; border-top:2px solid var(--line); border-bottom:0; }
+  /* 合计/小计行：加深色顶边框 + 浅色底，形成明显分隔 */
+  tr.total td { font-weight:650; background:var(--accent-soft); border-bottom:1px solid var(--line); }
+  /* 小计行是「一组模型的收尾」，用更重的线把它和下一个 Key 隔开 */
+  #compareTable tr.total td { border-top:2px solid var(--muted); }
+  #compareTable tr.grand td { border-top:2px solid var(--ink); }
+  /* 序号/名称列：与小计行的左边界对齐，形成视觉上的分组 */
+  #compareTable td:nth-child(1) { border-left:3px solid var(--accent); }
+  /* 同一个 Key 的多行：左侧加一条竖线，形成明显的分组归属 */
+  #compareTable tbody tr td.key-cell { border-left:3px solid var(--line); box-shadow:-4px 0 6px -5px rgba(0,0,0,.28); }
   .grp { border-left:1px solid var(--line); }
   .model { display:inline-flex; align-items:center; gap:7px; }
   .dot { width:8px; height:8px; border-radius:50%; background:var(--accent); flex:none; }
@@ -298,7 +310,7 @@ function init() {
     const keys = keysFor(date);
     if (!keys.length) { document.getElementById('compareTable').innerHTML = ''; return; }
     const head = `<thead><tr>
-      <th>API Key</th><th class="grp">模型</th>
+      <th>API Key</th><th class="grp model-cell">模型</th>
       <th class="grp">调用次数</th><th>命中 tokens</th><th>未命中 tokens</th><th>输出 tokens</th>
       <th class="grp">命中费用</th><th>未命中费用</th><th>输出费用</th><th class="grp">费用合计</th>
     </tr></thead>`;
@@ -312,9 +324,10 @@ function init() {
         const r = entry.models[m];
         body += '<tr>';
         if (i === 0) {
-          body += `<td rowspan="${modelNames.length}"><strong>${entry.name}</strong><br><span class="muted key" title="${k.key}">${k.key}</span></td>`;
+          // 跨行的 Key 单元格：第 1 列，左对齐，并补上与其它列一致的左侧分组线
+          body += `<td class="grp" rowspan="${modelNames.length}"><strong>${entry.name}</strong><br><span class="muted key" title="${k.key}">${k.key}</span></td>`;
         }
-        body += `<td class="grp">${m}</td>
+        body += `<td class="grp model-cell">${m}</td>
           <td class="grp">${fmtInt(r.requests)}</td>
           <td>${fmtInt(r.cache_hit)}</td><td>${fmtInt(r.cache_miss)}</td><td>${fmtInt(r.output)}</td>
           <td class="grp">${fmtMoney(r.cost.cache_hit)}</td><td>${fmtMoney(r.cost.cache_miss)}</td><td>${fmtMoney(r.cost.output)}</td>
@@ -322,15 +335,17 @@ function init() {
         if (i === modelNames.length - 1 && modelNames.length > 1) {
           // 注意：这里必须为「模型」列留一个空单元格，否则小计行的 9 个单元格
           // 会错位到 10 列的表头下（数值整体右移一列）。
-          body += `<tr class="total"><td class="subtotal-label">小计</td><td class="grp"></td>
-            <td class="grp">${fmtInt(t.requests)}</td><td>${fmtInt(t.cache_hit)}</td><td>${fmtInt(t.cache_miss)}</td><td>${fmtInt(t.output)}</td>
+          body += `<tr class="total"><td class="subtotal-label">小计</td><td class="grp model-cell"></td>
+            <td class="grp">${fmtInt(t.requests)}</td>
+            <td>${fmtInt(t.cache_hit)}</td><td>${fmtInt(t.cache_miss)}</td><td>${fmtInt(t.output)}</td>
             <td class="grp">${fmtMoney(t.cost.cache_hit)}</td><td>${fmtMoney(t.cost.cache_miss)}</td><td>${fmtMoney(t.cost.output)}</td>
             <td class="grp">${fmtMoney(t.cost_total)}</td></tr>`;
         }
       });
     }
-    body += `<tr class="total"><td>全部合计</td><td class="grp">${keys.length} 个 Key</td>
-      <td class="grp">${fmtInt(grand.requests)}</td><td>${fmtInt(grand.cache_hit)}</td><td>${fmtInt(grand.cache_miss)}</td><td>${fmtInt(grand.output)}</td>
+    body += `<tr class="total grand"><td class="subtotal-label">全部合计</td><td class="grp model-cell">${keys.length} 个 Key</td>
+      <td class="grp">${fmtInt(grand.requests)}</td>
+      <td>${fmtInt(grand.cache_hit)}</td><td>${fmtInt(grand.cache_miss)}</td><td>${fmtInt(grand.output)}</td>
       <td class="grp">${fmtMoney(grand.cost.cache_hit)}</td><td>${fmtMoney(grand.cost.cache_miss)}</td><td>${fmtMoney(grand.cost.output)}</td>
       <td class="grp">${fmtMoney(grand.cost_total)}</td></tr>`;
     document.getElementById('compareTable').innerHTML = head + '<tbody>' + body + '</tbody>';
