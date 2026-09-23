@@ -240,15 +240,31 @@ const compareCounts = rowCellCounts(compare);
 
 ok(detailCounts.length > 0 && detailCounts.every((n) => n === 9),
    "detail table: every row has 9 cells", `counts = ${detailCounts.join(",")}`);
-// data rows carry 10 cells; the 小计 row replaces the (rowspan) key cell with its label,
-// so it must still have 10 cells to stay aligned; only the rowspan continuation row has 9
+// Whether a rowspan continuation row exists depends on the DAY'S DATA: the API reflects
+// usage onto different key/model combinations, so on some days every key uses a single
+// model and no 小计 row is emitted at all. Assert shape-conditionally — hardcoding
+// "there is always a multi-model key" made CI fail the first time such a day arrived.
+const multiModelKeys = Object.keys(SITE.data[date])
+  .filter((k) => Object.keys(SITE.data[date][k].models).length > 1);
+const hasMultiModel = multiModelKeys.length > 0;
+const totalRowCount = (compare.match(/<tr class="total">/g) || []).length;
+const subtotalCount = (compare.match(/>小计<\/td>/g) || []).length;
+
+ok(hasMultiModel ? subtotalCount === multiModelKeys.length : subtotalCount === 0,
+   hasMultiModel
+     ? `a 小计 row per multi-model key (${multiModelKeys.length} key(s))`
+     : "no 小计 row when no key uses multiple models",
+   `multi-model keys=${multiModelKeys.length} subtotal rows=${subtotalCount}`);
 ok(compareCounts.every((n) => n === 9 || n === 10),
    "compare table: rows have 9 (rowspan continuation) or 10 cells",
    `counts = ${compareCounts.join(",")}`);
-ok(compareCounts.filter((n) => n === 10).length === compareCounts.length - 1,
-   "compare table: exactly one row (the rowspan continuation) has fewer cells",
-   `counts = ${compareCounts.join(",")}`);
-ok(compare.includes('<td class="grp model-cell"></td>'),
+// A continuation row only exists for a multi-model key, so their counts must match.
+ok(compareCounts.filter((n) => n === 9).length === multiModelKeys.length,
+   "one rowspan continuation row (9 cells) per multi-model key",
+   `counts = ${compareCounts.join(",")} multi=${multiModelKeys.length}`);
+ok(hasMultiModel
+     ? compare.includes('<td class="grp model-cell"></td>')
+     : !compare.includes('>小计</td>'),
    "小计 row keeps an empty 模型 cell so its values stay under the right headers");
 // alignment must be decided by semantic class, never by DOM position: in a rowspan
 // continuation row the 2nd child is a numeric cell, so :nth-child(2) would left-align
@@ -256,21 +272,64 @@ ok(compare.includes('<td class="grp model-cell"></td>'),
 ok(!/#compareTable[^{]*nth-child\(2\)/.test(compare),
    "model column alignment does not rely on :nth-child(2)");
 
-// the 小计 row's numbers must equal the sum of the two model rows above it
+// the 小计 row's numbers must equal the sum of the model rows above it
 const subtotalRow = (compare.match(/<tr class="total">[\s\S]*?<\/tr>/g) || [])
   .find((r) => r.includes("小计"));
-if (subtotalRow) {
+if (subtotalRow && multiModelKeys.length) {
   const cells = [...subtotalRow.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => m[1].replace(/<[^>]*>/g, "").trim());
-  const multiKey = Object.keys(SITE.data[date]).find((k) => Object.keys(SITE.data[date][k].models).length > 1);
-  if (multiKey) {
-    const t = metricsOf(SITE.data[date][multiKey].models);
-    ok(cells[0] === "小计", "subtotal row starts with the 小计 label", cells[0]);
-    ok(cells[1] === "", "subtotal row has an empty 模型 cell", JSON.stringify(cells[1]));
-    ok(cells[2] === fmtInt(t.requests), "subtotal 调用次数 is under the 调用次数 header",
-       `${cells[2]} vs ${fmtInt(t.requests)}`);
-    ok(cells[cells.length - 1] === fmtMoney(t.cost_total), "subtotal 费用合计 is in the last column",
-       `${cells[cells.length - 1]} vs ${fmtMoney(t.cost_total)}`);
-  }
+  const multiKey = multiModelKeys[0];
+  const t = metricsOf(SITE.data[date][multiKey].models);
+  ok(cells[0] === "小计", "subtotal row starts with the 小计 label", cells[0]);
+  ok(cells[1] === "", "subtotal row has an empty 模型 cell", JSON.stringify(cells[1]));
+  ok(cells[2] === fmtInt(t.requests), "subtotal 调用次数 is under the 调用次数 header",
+     `${cells[2]} vs ${fmtInt(t.requests)}`);
+  ok(cells[cells.length - 1] === fmtMoney(t.cost_total), "subtotal 费用合计 is in the last column",
+     `${cells[cells.length - 1]} vs ${fmtMoney(t.cost_total)}`);
+}
+
+// Regression guard for the multi-model rendering itself (the original "column shift" bug
+// lived here). The live data may not contain a multi-model key on a given day, so exercise
+// the renderer with a synthetic one: the fabricated page is tested through the same
+// assertions the real page uses.
+console.log("\n== synthetic multi-model render (always exercised) ==");
+{
+  const fakeKey = "sk-synthetic***0001";
+  const fake = {
+    dates: ["2026-01-01"], default_date: "2026-01-01", data_version: "test",
+    warnings: [], source_files: [],
+    data: {
+      "2026-01-01": {
+        [fakeKey]: {
+          name: "Synthetic", masked: fakeKey,
+          models: {
+            "model-a": { requests: 3, cache_hit: 10, cache_miss: 20, output: 30,
+                         cost_total: "0.1", cost: { cache_hit: "0.01", cache_miss: "0.02", output: "0.07" } },
+            "model-b": { requests: 5, cache_hit: 40, cache_miss: 50, output: 60,
+                         cost_total: "0.2", cost: { cache_hit: "0.02", cache_miss: "0.03", output: "0.15" } },
+          },
+        },
+      },
+    },
+  };
+  const el = (id) => (els[id] = els[id] || makeEl(id));
+  const out = EXPORTS.buildCompareHtml(fake.data["2026-01-01"]) || "";
+  const counts = [...out.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)]
+    .map((m) => [...m[1].matchAll(/<t[dh][^>]*>/g)].length);
+  ok(out.includes("小计"), "synthetic multi-model page renders a 小计 row");
+  ok(out.includes('<td class="grp model-cell"></td>'),
+     "synthetic 小计 row keeps the empty 模型 cell");
+  ok(counts.length > 0 && counts.every((n) => n === 9 || n === 10),
+     "synthetic table: every row has 9 or 10 cells", `counts = ${counts.join(",")}`);
+  ok(counts.filter((n) => n === 9).length === 1,
+     "synthetic table: exactly one rowspan continuation row", `counts = ${counts.join(",")}`);
+  const sub = (out.match(/<tr class="total">[\s\S]*?<\/tr>/g) || []).find((r) => r.includes("小计"));
+  const sc = sub ? [...sub.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => m[1].replace(/<[^>]*>/g, "").trim()) : [];
+  // synthetic totals: 3+5 requests, 10+40 / 20+50 / 30+60 tokens, costs summed.
+  // Compare against the formatter itself rather than hardcoding its decimal policy.
+  ok(sc.length === 10 && sc[0] === "小计" && sc[1] === "" && sc[2] === "8" &&
+     sc[3] === "50" && sc[4] === "70" && sc[5] === "90" &&
+     sc[9] === fmtMoney(0.1 + 0.2),
+     "synthetic 小计 totals land in the right columns", JSON.stringify(sc));
 }
 
 console.log(`\nRESULT: ${checks - failures}/${checks} checks passed`);

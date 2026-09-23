@@ -340,6 +340,58 @@ function metricsOf(models) {
   return t;
 }
 
+// 纯函数：根据「某一天的数据」生成对比表的 HTML。
+// 抽成纯函数是为了能在测试里用合成的多模型数据直接调用它 —— 真实数据不保证每天都
+// 存在「一个 Key 多模型」的情况，而小计行/跨行单元格正是只在那种情况下才会渲染。
+function buildCompareHtml(day) {
+  const keys = Object.keys(day).map(k => {
+    const t = metricsOf(day[k].models);
+    return { key: k, name: day[k].name, masked: day[k].masked, total: t.cost_total };
+  }).sort((a, b) => b.total - a.total);
+  if (!keys.length) return '';
+  const head = `<thead><tr>
+    <th>API Key</th><th class="grp model-cell">模型</th>
+    <th class="grp">调用次数</th><th>命中 tokens</th><th>未命中 tokens</th><th>输出 tokens</th>
+    <th class="grp">命中费用</th><th>未命中费用</th><th>输出费用</th><th class="grp">费用合计</th>
+  </tr></thead>`;
+  let body = '';
+  const grand = metricsOf(mergeModels(keys.map(k => day[k.key].models)));
+  for (const k of keys) {
+    const entry = day[k.key];
+    const modelNames = Object.keys(entry.models).sort();
+    const t = metricsOf(entry.models);
+    modelNames.forEach((m, i) => {
+      const r = entry.models[m];
+      body += '<tr>';
+      if (i === 0) {
+        // 跨行的 Key 单元格：第 1 列，左对齐，并补上与其它列一致的左侧分组线
+        body += `<td class="grp" rowspan="${modelNames.length}"><strong>${entry.name}</strong><br><span class="muted key" title="${k.key}">${k.key}</span></td>`;
+      }
+      body += `<td class="grp model-cell">${m}</td>
+        <td class="grp">${fmtInt(r.requests)}</td>
+        <td>${fmtInt(r.cache_hit)}</td><td>${fmtInt(r.cache_miss)}</td><td>${fmtInt(r.output)}</td>
+        <td class="grp">${fmtMoney(r.cost.cache_hit)}</td><td>${fmtMoney(r.cost.cache_miss)}</td><td>${fmtMoney(r.cost.output)}</td>
+        <td class="grp">${fmtMoney(r.cost_total)}</td></tr>`;
+      if (i === modelNames.length - 1 && modelNames.length > 1) {
+        // 注意：这里必须为「模型」列留一个空单元格，否则小计行的 9 个单元格
+        // 会错位到 10 列的表头下（数值整体右移一列）。
+        body += `<tr class="total"><td class="subtotal-label">小计</td><td class="grp model-cell"></td>
+          <td class="grp">${fmtInt(t.requests)}</td>
+          <td>${fmtInt(t.cache_hit)}</td><td>${fmtInt(t.cache_miss)}</td><td>${fmtInt(t.output)}</td>
+          <td class="grp">${fmtMoney(t.cost.cache_hit)}</td><td>${fmtMoney(t.cost.cache_miss)}</td><td>${fmtMoney(t.cost.output)}</td>
+          <td class="grp">${fmtMoney(t.cost_total)}</td></tr>`;
+      }
+    });
+  }
+  body += `<tr class="total grand"><td class="subtotal-label">全部合计</td><td class="grp model-cell">${keys.length} 个 Key</td>
+    <td class="grp">${fmtInt(grand.requests)}</td>
+    <td>${fmtInt(grand.cache_hit)}</td><td>${fmtInt(grand.cache_miss)}</td><td>${fmtInt(grand.output)}</td>
+    <td class="grp">${fmtMoney(grand.cost.cache_hit)}</td><td>${fmtMoney(grand.cost.cache_miss)}</td><td>${fmtMoney(grand.cost.output)}</td>
+    <td class="grp">${fmtMoney(grand.cost_total)}</td></tr>`;
+  return head + '<tbody>' + body + '</tbody>';
+}
+
+
 function init() {
   const dateSel = document.getElementById('dateSelect');
   const keySel = document.getElementById('keySelect');
@@ -471,48 +523,7 @@ function init() {
   function renderCompare() {
     const date = dateSel.value;
     const day = SITE.data[date] || {};
-    const keys = keysFor(date);
-    if (!keys.length) { document.getElementById('compareTable').innerHTML = ''; return; }
-    const head = `<thead><tr>
-      <th>API Key</th><th class="grp model-cell">模型</th>
-      <th class="grp">调用次数</th><th>命中 tokens</th><th>未命中 tokens</th><th>输出 tokens</th>
-      <th class="grp">命中费用</th><th>未命中费用</th><th>输出费用</th><th class="grp">费用合计</th>
-    </tr></thead>`;
-    let body = '';
-    const grand = metricsOf(mergeModels(keys.map(k => day[k.key].models)));
-    for (const k of keys) {
-      const entry = day[k.key];
-      const modelNames = Object.keys(entry.models).sort();
-      const t = metricsOf(entry.models);
-      modelNames.forEach((m, i) => {
-        const r = entry.models[m];
-        body += '<tr>';
-        if (i === 0) {
-          // 跨行的 Key 单元格：第 1 列，左对齐，并补上与其它列一致的左侧分组线
-          body += `<td class="grp" rowspan="${modelNames.length}"><strong>${entry.name}</strong><br><span class="muted key" title="${k.key}">${k.key}</span></td>`;
-        }
-        body += `<td class="grp model-cell">${m}</td>
-          <td class="grp">${fmtInt(r.requests)}</td>
-          <td>${fmtInt(r.cache_hit)}</td><td>${fmtInt(r.cache_miss)}</td><td>${fmtInt(r.output)}</td>
-          <td class="grp">${fmtMoney(r.cost.cache_hit)}</td><td>${fmtMoney(r.cost.cache_miss)}</td><td>${fmtMoney(r.cost.output)}</td>
-          <td class="grp">${fmtMoney(r.cost_total)}</td></tr>`;
-        if (i === modelNames.length - 1 && modelNames.length > 1) {
-          // 注意：这里必须为「模型」列留一个空单元格，否则小计行的 9 个单元格
-          // 会错位到 10 列的表头下（数值整体右移一列）。
-          body += `<tr class="total"><td class="subtotal-label">小计</td><td class="grp model-cell"></td>
-            <td class="grp">${fmtInt(t.requests)}</td>
-            <td>${fmtInt(t.cache_hit)}</td><td>${fmtInt(t.cache_miss)}</td><td>${fmtInt(t.output)}</td>
-            <td class="grp">${fmtMoney(t.cost.cache_hit)}</td><td>${fmtMoney(t.cost.cache_miss)}</td><td>${fmtMoney(t.cost.output)}</td>
-            <td class="grp">${fmtMoney(t.cost_total)}</td></tr>`;
-        }
-      });
-    }
-    body += `<tr class="total grand"><td class="subtotal-label">全部合计</td><td class="grp model-cell">${keys.length} 个 Key</td>
-      <td class="grp">${fmtInt(grand.requests)}</td>
-      <td>${fmtInt(grand.cache_hit)}</td><td>${fmtInt(grand.cache_miss)}</td><td>${fmtInt(grand.output)}</td>
-      <td class="grp">${fmtMoney(grand.cost.cache_hit)}</td><td>${fmtMoney(grand.cost.cache_miss)}</td><td>${fmtMoney(grand.cost.output)}</td>
-      <td class="grp">${fmtMoney(grand.cost_total)}</td></tr>`;
-    document.getElementById('compareTable').innerHTML = head + '<tbody>' + body + '</tbody>';
+    document.getElementById('compareTable').innerHTML = buildCompareHtml(day);
   }
 
   function renderAll() { renderKpis(); renderDetail(); renderCompare(); }
@@ -545,6 +556,7 @@ init();
 if (typeof __SITE_TEST__ !== 'undefined' && __SITE_TEST__) {
   __SITE_TEST__({
     SITE, metricsOf, mergeModels, fmtInt, fmtMoney, fmtTokens,
+    buildCompareHtml,
     keysFor: date => {
       const entry = SITE.data[date] || {};
       return Object.keys(entry).map(k => {

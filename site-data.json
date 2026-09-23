@@ -171,17 +171,93 @@
     },
     "name": "金哲慧"
    }
+  },
+  "2026-09-23": {
+   "sk-29aa1***********************9ea3": {
+    "masked": "sk-29aa1***********************9ea3",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 886144,
+      "cache_miss": 68908,
+      "cost": {
+       "cache_hit": "0.2658432",
+       "cache_miss": "0.620172",
+       "output": "0.210843"
+      },
+      "cost_total": "1.0968582",
+      "output": 7809,
+      "requests": 6
+     }
+    },
+    "name": "贺海晏"
+   },
+   "sk-68572***********************bfb9": {
+    "masked": "sk-68572***********************bfb9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 36701824,
+      "cache_miss": 107918,
+      "cost": {
+       "cache_hit": "0.73403648",
+       "cache_miss": "0.107918",
+       "output": "0.233620"
+      },
+      "cost_total": "1.07557448",
+      "output": 58405,
+      "requests": 141
+     }
+    },
+    "name": "赵杭"
+   },
+   "sk-6d55d***********************5262": {
+    "masked": "sk-6d55d***********************5262",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 92885888,
+      "cache_miss": 83379,
+      "cost": {
+       "cache_hit": "3.71543552",
+       "cache_miss": "0.166758",
+       "output": "0.695696"
+      },
+      "cost_total": "4.57788952",
+      "output": 86962,
+      "requests": 178
+     }
+    },
+    "name": "高鹏程"
+   },
+   "sk-9c064***********************d8c9": {
+    "masked": "sk-9c064***********************d8c9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 73910656,
+      "cache_miss": 303369,
+      "cost": {
+       "cache_hit": "2.75927552",
+       "cache_miss": "0.588403",
+       "output": "1.907196"
+      },
+      "cost_total": "5.25487452",
+      "output": 275473,
+      "requests": 174
+     }
+    },
+    "name": "金哲慧"
+   }
   }
  },
- "data_version": "2853e307d195",
+ "data_version": "7349c4a094b2",
  "dates": [
   "2026-09-21",
-  "2026-09-22"
+  "2026-09-22",
+  "2026-09-23"
  ],
- "default_date": "2026-09-22",
+ "default_date": "2026-09-23",
  "source_files": [
   "amount-2026-09-21.csv",
-  "amount-2026-09-22.csv"
+  "amount-2026-09-22.csv",
+  "amount-2026-09-23.csv"
  ],
  "warnings": []
 }
