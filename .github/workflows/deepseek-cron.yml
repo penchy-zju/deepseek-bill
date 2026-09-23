@@ -31,56 +31,45 @@ jobs:
         run: |
           set -euo pipefail
 
-          # ---------- 计算北京时间「前一天 00:00:00 ~ 当天 00:00:00」的区间 ----------
-          # 全部用纯 epoch 算术完成，不依赖 tzdata（TZ=Asia/Shanghai 在部分环境不可靠），
-          # 也不依赖 date 本地时区：runner 的本地时区与 UTC 是否一致都不影响结果。
+          # ---------- 计算要抓取的日期与区间 ----------
+          # 逻辑在 scripts/usage_window.py（纯标准库，可单独跑、有单元测试）。
           #
-          # 关键点：北京时间 00:00 == 其前一天 UTC 16:00。
-          # 先把「北京时间现在」按 86400 取整，得到北京时间当天零点的 epoch 表示，
-          # 再减去 8 小时时差，就得到该零点的真实 UTC 时间戳。
+          # 为什么不用 `date` 现算：GitHub 的定时任务经常延迟（本仓库第一次定时运行
+          # 就晚了 3 小时：cron 定在 17:00 UTC，实际 20:01 UTC 才启动）。如果按“任务
+          # 实际启动时刻”去算“前一天”，延迟跨过北京午夜时就会抓到一个还没结束的日期。
+          # 现在日期一律取「当前最新的、已经完整结束的北京日」，延迟多久都不会错；
+          # 定时触发额外用 cron 的既定时刻来决定是否要顺带补抓被跳过的日期。
+          python3 scripts/usage_window.py \
+            --scheduled "${{ github.event_name == 'schedule' && 'true' || 'false' }}" \
+            --env >> "$GITHUB_ENV"
+
+          # GITHUB_ENV 变量对“下一个 step”才生效，本 step 内要自己先读出来用。
+          TARGET_DATE=$(grep '^target_date=' "$GITHUB_ENV" | tail -1 | cut -d= -f2)
+          START_DATE=$(grep '^start_date=' "$GITHUB_ENV" | tail -1 | cut -d= -f2)
+          DAYS=$(grep '^days=' "$GITHUB_ENV" | tail -1 | cut -d= -f2)
+          START=$(grep '^start=' "$GITHUB_ENV" | tail -1 | cut -d= -f2)
+          END=$(grep '^end=' "$GITHUB_ENV" | tail -1 | cut -d= -f2)
           BEIJING_OFFSET=28800
-          DAY=86400
 
-          NOW=$(date -u +%s)
-          if ! BEIJING_EPOCH=$(( NOW + BEIJING_OFFSET )); then
-            echo "::error::failed to read current epoch time"
+          # ---------- 自检 ----------
+          if [ "$(( END - START ))" -ne "$(( 86400 * DAYS ))" ]; then
+            echo "::error::unexpected interval $(( END - START ))s for ${DAYS} day(s)"
             exit 1
           fi
-          ROUNDED_MIDNIGHT=$(( BEIJING_EPOCH - (BEIJING_EPOCH % DAY) ))
-
-          # 最近一个「已完整结束」的北京日 = 当前北京日的前一天。
-          TARGET_DATE=$(date -u -d "@$(( ROUNDED_MIDNIGHT - DAY ))" +%F)
-          END=$(( ROUNDED_MIDNIGHT - BEIJING_OFFSET ))
-          START=$(( END - DAY ))
-
-          # ---------- 自检：区间必须正好 24 小时，且两端都落在 UTC 16:00 ----------
-          if [ "$(( END - START ))" -ne 86400 ]; then
-            echo "::error::unexpected interval $(( END - START ))s between START and END"
-            exit 1
-          fi
-          if [ "$(( START % DAY ))" -ne 57600 ] || [ "$(( END % DAY ))" -ne 57600 ]; then
+          if [ "$(( START % 86400 ))" -ne 57600 ] || [ "$(( END % 86400 ))" -ne 57600 ]; then
             echo "::error::window edges are not at 00:00 Beijing (START=${START}, END=${END})"
             exit 1
           fi
-          # 归档日期标签必须与 START 对应的北京日期一致。
-          LABEL_FROM_START=$(date -u -d "@$(( START + BEIJING_OFFSET ))" +%F)
-          if [ "${LABEL_FROM_START}" != "${TARGET_DATE}" ]; then
-            echo "::error::date label mismatch: ${LABEL_FROM_START} != ${TARGET_DATE}"
-            exit 1
-          fi
 
+          echo "Trigger            : ${{ github.event_name }}"
           echo "Current UTC        : $(date -u '+%F %H:%M:%S')"
-          echo "Target usage date  : ${TARGET_DATE} (00:00 -> 24:00 Beijing)"
+          echo "Window (Beijing)   : ${START_DATE} 00:00  ->  ${TARGET_DATE} 24:00  (${DAYS} day(s))"
+          echo "Target usage date  : ${TARGET_DATE}"
           echo "START (epoch)      : ${START}  = $(date -u -d "@${START}" '+%F %H:%M:%S') UTC = $(date -u -d "@$(( START + BEIJING_OFFSET ))" '+%F %H:%M:%S') UTC+8"
           echo "END   (epoch)      : ${END}  = $(date -u -d "@${END}" '+%F %H:%M:%S') UTC = $(date -u -d "@$(( END + BEIJING_OFFSET ))" '+%F %H:%M:%S') UTC+8"
 
-          # 注意：写入 GITHUB_ENV 的变量只对后续 step 生效，本 step 内不可见，
-          # 因此后续 step 需要先把它取到本地变量再用（不要直接展开该变量）。
-          {
-            echo "target_date=${TARGET_DATE}"
-            echo "start=${START}"
-            echo "end=${END}"
-          } >> "$GITHUB_ENV"
+          # target_date / start_date / days / start / end 已经由 usage_window.py 写进
+          # $GITHUB_ENV，后面的 step 会拿到这些值（本 step 内不可见，所以上面先读出来了）。
 
           # ---------- 前置检查：token 是否配置 ----------
           # Secrets 未配置时是空字符串，提前失败并给出可操作的提示。
@@ -141,9 +130,11 @@ jobs:
 
           # 来自上一个 step 通过 GITHUB_ENV 导出的值：必须在 step 内部先取到本地变量，
           # 因为 GITHUB_ENV 的变量不会在写入它的那个 step 内生效。
+          START_DATE="${start_date}"
           TARGET_DATE="${target_date}"
-          if [ -z "${TARGET_DATE}" ]; then
-            echo "::error::target_date is empty; the fetch step did not complete correctly."
+          DAYS="${days:-1}"
+          if [ -z "${START_DATE}" ] || [ -z "${TARGET_DATE}" ]; then
+            echo "::error::start_date/target_date is empty; the fetch step did not complete correctly."
             exit 1
           fi
 
@@ -174,55 +165,63 @@ jobs:
           fi
 
           AMOUNT_FILE="${AMOUNT_FILES[0]}"
-          echo "Using amount CSV: ${AMOUNT_FILE}"
+          echo "Using amount CSV: ${AMOUNT_FILE} (covers ${DAYS} day(s): ${START_DATE} .. ${TARGET_DATE})"
 
           DATA_DIR="data"
-          TARGET="${DATA_DIR}/amount-${TARGET_DATE}.csv"
           mkdir -p "${DATA_DIR}"
 
-          # 三件事一起做：
-          # 1) 去掉 UTF-8 BOM——必须显式去掉：`read` 会把 BOM 字节一起读进变量，
-          #    原样回写等于没去（曾因此让 BOM 混进仓库）；
-          # 2) 去掉行尾的 \r——接口压缩包里的 CSV 是 CRLF，若原样入库，
-          #    在 Windows 上 checkout 会因 autocrlf 变成 LF，导致同一份数据
-          #    在不同平台呈现出差异；统一成 LF 后结果与平台无关；
-          # 3) 对数据行做稳定排序——平台接口每次返回的行内容相同但**顺序会变**，
-          #    不排序的话每次运行都会产生一个“假变更”，从而每次都提交一次数据。
-          #    排序键取 (start_time, model, api_key, type)，既保证同一输入产出逐字节
-          #    相同的结果，又让文件保持按时间排列、方便人看。
-          read -r HEADER < "${AMOUNT_FILE}"
-          HEADER="${HEADER#$'\xEF\xBB\xBF'}"   # 去 BOM
-          HEADER="${HEADER%$'\r'}"             # 去 CR
-          {
-            printf '%s\n' "${HEADER}"
-            tail -n +2 "${AMOUNT_FILE}" | tr -d '\r' | sort -t, -k2,2 -k4,4 -k6,6 -k7,7
-          } > "${TARGET}"
-
-          # 自检：写出后首字节必须是 'u'（表头 user_id），确认 BOM/CR 都已清掉。
-          FIRST_BYTES=$(head -c 3 "${TARGET}" | od -An -tx1 | tr -d ' \n')
-          if [ "${FIRST_BYTES}" != "7573" ] && [ "${FIRST_BYTES}" != "757365" ]; then
-            echo "::error::extracted CSV still starts with unexpected bytes (${FIRST_BYTES}); expected 'us…'"
+          # 规范化：去 BOM、去行尾 \r、按 (start_time, model, api_key, type) 稳定排序。
+          # 详见下面注释与 README「数据归档路径」。
+          #
+          # 归档日期用 scripts/usage_window.py --labels 推算，而不是 `date -d "+N days"`：
+          # date 的跨平台语义不一致（本仓库踩过 tzdata 的坑），放在脚本里还能被单元测试覆盖。
+          mapfile -t DAY_LABELS < <(python3 scripts/usage_window.py --labels "${START_DATE}" "${DAYS}")
+          if [ "${#DAY_LABELS[@]}" -ne "${DAYS}" ]; then
+            echo "::error::expected ${DAYS} day label(s) from ${START_DATE}, got ${#DAY_LABELS[@]}"
             exit 1
           fi
 
-          BYTES=$(wc -c < "${TARGET}")
-          ROWS=$(( $(wc -l < "${TARGET}") - 1 ))
-          echo "Wrote ${TARGET} (${BYTES} bytes, ~${ROWS} data rows)"
+          ANY_WRITTEN=false
+          for LABEL in "${DAY_LABELS[@]}"; do
+            DEST="${DATA_DIR}/amount-${LABEL}.csv"
 
-          if [ "${BYTES}" -eq 0 ]; then
-            echo "::error::Extracted amount CSV is empty; refusing to commit an empty file."
-            rm -f "${TARGET}"
-            exit 1
-          fi
+            read -r HEADER < "${AMOUNT_FILE}"
+            HEADER="${HEADER#$'\xEF\xBB\xBF'}"   # 去 BOM
+            HEADER="${HEADER%$'\r'}"             # 去 CR
+            {
+              printf '%s\n' "${HEADER}"
+              tail -n +2 "${AMOUNT_FILE}" | tr -d '\r' | sort -t, -k2,2 -k4,4 -k6,6 -k7,7
+            } > "${DEST}"
 
-          # 只提交真正有数据行的文件；仅表头的文件正常退出（不算失败，避免误报）。
-          if [ "${ROWS}" -le 0 ]; then
-            echo "::warning::amount CSV has no data rows for ${TARGET_DATE} (header only)."
-            rm -f "${TARGET}"
+            # 自检：首字节必须是 'u'（表头 user_id），确认 BOM/CR 都已清掉。
+            FIRST_BYTES=$(head -c 3 "${DEST}" | od -An -tx1 | tr -d ' \n')
+            if [ "${FIRST_BYTES}" != "7573" ] && [ "${FIRST_BYTES}" != "757365" ]; then
+              echo "::error::extracted CSV still starts with unexpected bytes (${FIRST_BYTES}); expected 'us…'"
+              exit 1
+            fi
+
+            BYTES=$(wc -c < "${DEST}")
+            ROWS=$(( $(wc -l < "${DEST}") - 1 ))
+            echo "Wrote ${DEST} (${BYTES} bytes, ~${ROWS} data rows)"
+
+            if [ "${BYTES}" -eq 0 ]; then
+              echo "::error::Extracted amount CSV is empty for ${LABEL}; refusing to commit an empty file."
+              rm -f "${DEST}"
+              exit 1
+            fi
+            if [ "${ROWS}" -le 0 ]; then
+              echo "::warning::amount CSV has no data rows for ${LABEL} (header only); not committing it."
+              rm -f "${DEST}"
+            else
+              ANY_WRITTEN=true
+            fi
+          done
+
+          if [ "${ANY_WRITTEN}" != "true" ]; then
             echo "target_written=false" >> "$GITHUB_ENV"
           else
             echo "target_written=true" >> "$GITHUB_ENV"
-            echo "target_path=${TARGET}" >> "$GITHUB_ENV"
+            echo "target_path=data/amount-*.csv" >> "$GITHUB_ENV"
           fi
 
           rm -rf "${WORK_DIR}"
@@ -271,12 +270,24 @@ jobs:
       - name: Verify generated dashboard
         run: |
           set -euo pipefail
-          # 0) 自检 workflow 文件本身：语法坏掉的 workflow 会被 GitHub 直接忽略
-          #    （连 workflow_dispatch 都会消失），必须在推送前拦住。
+          # 0) 先做静态语法检查：语法错误在动态执行时只会表现为“运行失败”，
+          #    看不出是语法问题；这里直接编译一遍，失败信息更明确。
+          #    （曾经出现过一次语法错误，因为 CI 失败信息不够直白而多花了很多时间定位。）
+          python3 -m py_compile scripts/build_site.py scripts/check_workflow.py scripts/test_publish.py \
+            scripts/usage_window.py scripts/test_usage_window.py scripts/test_multiday.py
+          node --check scripts/verify_site.js
+          # 每个 run: 块的 shell 语法也检查（YAML 合法不代表里面的 shell 合法）
+          python3 scripts/check_shell_blocks.py
+          echo "static syntax checks: OK"
+          # 1) 自检 workflow 文件本身：结构坏掉的 workflow 会被 GitHub 忽略
           python3 scripts/check_workflow.py
-          # 1) 独立复算 CSV 聚合，并在 Node 里真实执行页面脚本来交叉校验
+          # 2) 抓取日期/区间的推算逻辑（含定时延迟与跨天补抓）
+          python3 scripts/test_usage_window.py
+          # 3) 多日窗口的归档规范化（去 BOM/CR、稳定排序、可复现）
+          python3 scripts/test_multiday.py
+          # 4) 独立复算 CSV 聚合，并在 Node 里真实执行页面脚本来交叉校验
           node scripts/verify_site.js
-          # 2) 在临时仓库里演练 gh-pages 发布逻辑（重复运行不应产生空提交）
+          # 5) 在临时仓库里演练 gh-pages 发布逻辑（重复运行不应产生空提交）
           python3 scripts/test_publish.py
 
       - name: Commit dashboard

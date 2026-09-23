@@ -8,5 +8,7 @@ _shot/
 _sim*/
 _*.sh
 _*.py
+__pycache__/
+*.pyc
 .DS_Store
 Thumbs.db

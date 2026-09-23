@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import hashlib
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -71,8 +72,15 @@ def snapshot(root: Path) -> str:
     return h.hexdigest()
 
 
-def publish(work: Path, tmpd: Path, label: str) -> None:
-    """Mirror of the workflow's publish step, including the snapshot comparison."""
+def publish(work: Path, tmpd: Path, label: str, reseat=None, reset_fixture: bool = True) -> None:
+    """Mirror of the workflow's publish step, including the snapshot comparison.
+
+    `reseat` restores the canonical fixture; pass reset_fixture=False for the runs whose whole
+    point is to publish a deliberately different (or missing) data set.
+    """
+    if reseat is not None and reset_fixture:
+        reseat()
+        build(work)
     # staging dir must be recreated from scratch every run
     staged_dir = tmpd / "site"
     shutil.rmtree(staged_dir, ignore_errors=True)
@@ -125,7 +133,7 @@ def publish(work: Path, tmpd: Path, label: str) -> None:
         else:
             shutil.copy(entry, dst)
 
-    # workflow self-check: csv count on the site must equal the number of days in the page
+    # The workflow's self-check compares the served csv count with the days in the page.
     page_days = len(json.loads((work / "site-data.json").read_text(encoding="utf-8"))["dates"])
     csv_count = len(list((work / "data").glob("amount-*.csv")))
     if page_days != csv_count:
@@ -174,7 +182,39 @@ def gh_count(work: Path) -> int:
     return int(run(["git", "rev-list", "--count", "gh-pages"], work).stdout.strip())
 
 
+def source_dates() -> list[str]:
+    """Dates actually present in the real repo's data/ (sorted)."""
+    out = []
+    for p in (REPO / "data").glob("amount-*.csv"):
+        m = re.fullmatch(r"amount-(\d{4}-\d{2}-\d{2})\.csv", p.name)
+        if m:
+            out.append(m.group(1))
+    return sorted(out)
+
+
+def next_day(day: str) -> str:
+    d = datetime.strptime(day, "%Y-%m-%d").date() + timedelta(days=1)
+    return d.strftime("%Y-%m-%d")
+
+
+def expected_files(dates: list[str]) -> list[str]:
+    return sorted([".nojekyll", "index.html", "site-data.json"] +
+                  [f"data/amount-{d}.csv" for d in dates])
+
+
 def main() -> int:
+    src_dates = source_dates()
+    if not src_dates:
+        print("no data/amount-*.csv in the repo; nothing to test")
+        return 0
+    # Deterministic two-day fixture derived from a real file, so this test never depends on
+    # how many days the repo happens to contain (an earlier version hardcoded two specific
+    # dates and started failing in CI the moment a second day of data landed).
+    day1 = src_dates[0]
+    day2 = next_day(day1)
+    template = (REPO / "data" / f"amount-{day1}.csv").read_text(encoding="utf-8")
+    two_days = [day1, day2]
+
     tmp = Path(tempfile.mkdtemp(prefix="publishtest-"))
     remote = tmp / "remote.git"
     work = tmp / "work"
@@ -191,7 +231,15 @@ def main() -> int:
     # independent of how the checkout was made.
     work.mkdir()
     run([*GIT, "init", "-q"], work)
-    run([*GIT, "checkout", "-q", "-b", "master"], work)
+    work_git = ["git", "-c", "core.autocrlf=false", "-c", "user.name=test", "-c", "user.email=test@example.com"]
+
+    def wrun(args, check_rc=True):
+        r = subprocess.run([*work_git, *args], cwd=work, capture_output=True, text=True)
+        if check_rc and r.returncode != 0:
+            raise RuntimeError(f"{' '.join(args)} failed ({r.returncode})\n{r.stdout}\n{r.stderr}")
+        return r
+
+    wrun(["checkout", "-q", "-b", "master"])
     for entry in sorted(REPO.iterdir()):
         if entry.name == ".git" or entry.name.startswith("_"):
             continue
@@ -200,21 +248,45 @@ def main() -> int:
             shutil.copytree(entry, dst, ignore=shutil.ignore_patterns(".git"))
         else:
             shutil.copy(entry, dst)
-    run([*GIT, "add", "-A"], work)
-    run([*GIT, "commit", "-q", "-m", "seed: working tree snapshot"], work)
-    run([*GIT, "remote", "add", "origin", str(remote)], work)
-    run([*GIT, "push", "-q", "origin", "master"], work)
+
+    # Replace the copied data/ with a deterministic single-day fixture.
+    fixture_dir = REPO / "data"
+    (work / "data").mkdir(exist_ok=True)
+    for p in (work / "data").glob("amount-*.csv"):
+        p.unlink()
+    (work / "data" / f"amount-{day1}.csv").write_text(template, encoding="utf-8", newline="\n")
+
+    wrun(["add", "-A"])
+    wrun(["commit", "-q", "-m", "seed: working tree snapshot"])
+    wrun(["remote", "add", "origin", str(remote)])
+    wrun(["push", "-q", "origin", "master"])
     # mimic actions/checkout: the local repo knows only the default branch
-    run([*GIT, "remote", "set-branches", "origin", "master"], work)
+    wrun(["remote", "set-branches", "origin", "master"])
+
+    def gh_files_expected():
+        dates = json.loads((work / "site-data.json").read_text(encoding="utf-8"))["dates"]
+        return expected_files(dates)
+
+    def reseat() -> None:
+        """Restore the deterministic single-day fixture in the sandbox."""
+        (work / "data").mkdir(exist_ok=True)
+        for p in (work / "data").glob("amount-*.csv"):
+            p.unlink()
+        (work / "data" / f"amount-{day1}.csv").write_text(template, encoding="utf-8", newline="\n")
+
+    def make_day(day: str) -> None:
+        (work / "data" / f"amount-{day}.csv").write_text(
+            template.replace(day1, day), encoding="utf-8", newline="\n")
 
     try:
-        print("== run 1: first publish (no gh-pages anywhere) ==")
+        print(f"fixture dates: {day1} (+{day2} when needed); repo has {len(src_dates)} day(s)")
+        print("\n== run 1: first publish (no gh-pages anywhere) ==")
         build(work)
-        publish(work, tmpd, "run1")
+        expected = gh_files_expected()
+        publish(work, tmpd, "run1", reseat)
         check(gh_count(work) == 1, "gh-pages created with 1 commit", str(gh_count(work)))
-        check(gh_files(work) == [".nojekyll", "data/amount-2026-09-21.csv", "index.html", "site-data.json"],
-              "gh-pages contains exactly the site files", str(gh_files(work)))
-        # the remote must actually have it
+        check(gh_files(work) == expected, "gh-pages contains exactly the site files",
+              f"{gh_files(work)} want {expected}")
         rem = run(["git", "--git-dir", str(remote), "for-each-ref", "--format=%(refname:short)", "refs/heads"],
                   tmp).stdout.split()
         check("gh-pages" in rem, "gh-pages exists on the remote", str(rem))
@@ -222,53 +294,46 @@ def main() -> int:
         print("\n== run 2: identical inputs (expect no new commit) ==")
         before = gh_head(work)
         build(work)
-        publish(work, tmpd, "run2")
+        publish(work, tmpd, "run2", reseat)
         check(gh_head(work) == before, "gh-pages HEAD unchanged (no empty publish)")
         check(gh_count(work) == 1, "still exactly 1 commit", str(gh_count(work)))
 
         print("\n== run 3: dirty worktree must not break the switch ==")
         with open(work / "index.html", "a", encoding="utf-8") as fh:
             fh.write("\n<!-- locally modified -->\n")
+        # Rebuild first, exactly as the workflow does: the build regenerates index.html, so
+        # the publish step only has to cope with *incidental* dirt (e.g. line-ending churn).
         build(work)
-        publish(work, tmpd, "run3")
+        publish(work, tmpd, "run3", reseat)
         check(gh_head(work) == before, "dirty worktree produced no spurious publish")
         check(run(["git", "rev-parse", "--abbrev-ref", "HEAD"], work).stdout.strip() == "master",
               "harness returned to master after publishing")
 
-        print("\n== run 4: a new day of data arrives ==")
-        src_csv = work / "data" / "amount-2026-09-21.csv"
-        text = src_csv.read_text(encoding="utf-8").replace("2026-09-21", "2026-09-22")
-        (work / "data" / "amount-2026-09-22.csv").write_text(text, encoding="utf-8", newline="\n")
+        print(f"\n== run 4: a new day of data arrives ({day2}) ==")
+        make_day(day2)
         build(work)
         data = json.loads((work / "site-data.json").read_text(encoding="utf-8"))
-        check(data["dates"] == ["2026-09-21", "2026-09-22"], "page spans 2 days", str(data["dates"]))
-        # default_date is "yesterday in Beijing": it must be a date that exists AND is not
-        # in the future relative to Beijing today (a manual run must never default to today's
-        # still-incomplete day). Depending on when this test runs, either day is valid.
+        check(data["dates"] == two_days, "page spans 2 days", str(data["dates"]))
         today_cn = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d")
-        expected = max(d for d in data["dates"] if d < today_cn) if any(d < today_cn for d in data["dates"]) \
+        expected_default = max(d for d in data["dates"] if d < today_cn) if any(d < today_cn for d in data["dates"]) \
             else max(data["dates"])
-        check(data["default_date"] == expected,
-              f"default_date is the newest non-future day ({expected})", str(data["default_date"]))
-        publish(work, tmpd, "run4")
+        check(data["default_date"] == expected_default,
+              f"default_date is the newest non-future day ({expected_default})", str(data["default_date"]))
+        publish(work, tmpd, "run4", reseat, reset_fixture=False)
         check(gh_count(work) == 2, "gh-pages got a 2nd commit", str(gh_count(work)))
-        check("data/amount-2026-09-22.csv" in gh_files(work), "new day's CSV is served", str(gh_files(work)))
+        check(f"data/amount-{day2}.csv" in gh_files(work), "new day's CSV is served", str(gh_files(work)))
 
         print("\n== run 5: data reverted to one day (stale file must be pruned) ==")
-        # The harness switches back to master between runs, and that day's CSV only ever
-        # existed on gh-pages, so recreate it before removing it. (The real workflow
-        # rebuilds the working tree from scratch each run, so it has no such gap.)
-        stale = work / "data" / "amount-2026-09-22.csv"
+        stale = work / "data" / f"amount-{day2}.csv"
         if not stale.exists():
-            stale.write_text((work / "data" / "amount-2026-09-21.csv").read_text(encoding="utf-8")
-                             .replace("2026-09-21", "2026-09-22"), encoding="utf-8", newline="\n")
+            make_day(day2)
         build(work)
-        if json.loads((work / "site-data.json").read_text(encoding="utf-8"))["dates"] != ["2026-09-21", "2026-09-22"]:
+        if json.loads((work / "site-data.json").read_text(encoding="utf-8"))["dates"] != two_days:
             raise RuntimeError("harness lost the 2-day data set before the prune test")
         stale.unlink()
         build(work)
-        publish(work, tmpd, "run5")
-        check(gh_files(work) == [".nojekyll", "data/amount-2026-09-21.csv", "index.html", "site-data.json"],
+        publish(work, tmpd, "run5", reseat, reset_fixture=False)
+        check(gh_files(work) == [".nojekyll", f"data/amount-{day1}.csv", "index.html", "site-data.json"],
               "stale CSV pruned from served site", str(gh_files(work)))
         check(gh_count(work) == 3, "gh-pages got a 3rd commit", str(gh_count(work)))
 
@@ -276,25 +341,24 @@ def main() -> int:
         # Reproduces the bug where the site silently stopped updating: gh-pages held older
         # content while master was current, and because no *commit* happened in the run,
         # the old "publish only if this run committed" gate skipped publishing forever.
-        stale_work = work / "data" / "amount-2026-09-99.csv"
-        stale_work.write_text((work / "data" / "amount-2026-09-21.csv").read_text(encoding="utf-8")
-                              .replace("2026-09-21", "2026-09-99"), encoding="utf-8", newline="\n")
+        bogus = "2099-12-31"
+        (work / "data" / f"amount-{bogus}.csv").write_text(
+            template.replace(day1, bogus), encoding="utf-8", newline="\n")
         build(work)
-        publish(work, tmpd, "run6-stale-inject")
-        check("data/amount-2026-09-99.csv" in gh_files(work), "gh-pages now holds the bogus 4th file",
+        publish(work, tmpd, "run6-stale-inject", reseat, reset_fixture=False)
+        check(f"data/amount-{bogus}.csv" in gh_files(work), "gh-pages now holds the bogus extra file",
               str(gh_files(work)))
-        # now revert master to the 1-day set WITHOUT making any new commit, so this run has no
+        # now revert to the 1-day set WITHOUT making any new commit, so this run has no
         # "change flag" at all — exactly the situation that used to leave the site stale.
-        stale_work.unlink(missing_ok=True)
+        (work / "data" / f"amount-{bogus}.csv").unlink(missing_ok=True)
         build(work)
         gh_before = gh_head(work)
-        publish(work, tmpd, "run7-heal")
+        publish(work, tmpd, "run7-heal", reseat, reset_fixture=False)
         check(gh_head(work) != gh_before, "a publish happened even though this run made no commit")
-        check(gh_files(work) == [".nojekyll", "data/amount-2026-09-21.csv", "index.html", "site-data.json"],
+        check(gh_files(work) == [".nojekyll", f"data/amount-{day1}.csv", "index.html", "site-data.json"],
               "gh-pages self-healed back to the desired content", str(gh_files(work)))
-        # and once healed, further publishes must be skipped again
         count_before = gh_count(work)
-        publish(work, tmpd, "run8-noop")
+        publish(work, tmpd, "run8-noop", reseat)
         check(gh_count(work) == count_before, "after healing, no further publish commits are made",
               f"{count_before} -> {gh_count(work)}")
 
@@ -308,16 +372,21 @@ def main() -> int:
         check(served.count("<title>") == 1, "served HTML has a title")
         check("const SITE = {" in served, "data is embedded in served HTML")
         sd = json.loads((serve / "site-data.json").read_text(encoding="utf-8"))
-        check(sd["default_date"] == "2026-09-21", "served data matches the source of truth", str(sd["default_date"]))
-        # served page must be self-contained: the CSV link target must exist
+        served_dates = sd["dates"]
+        check(served_dates == [day1], "served data matches the source of truth", str(served_dates))
         check((serve / "data" / f"amount-{sd['default_date']}.csv").is_file(),
               "CSV referenced by the page is served alongside it")
 
-        print("\n== real repo untouched ==")
+        print("\n== real repo untouched (only asserting what this test controls) ==")
+        # NOTE: assert the git status of data/, not the number of days — the repo legitimately
+        # gains a file per day, and asserting a count made this test fail as data accumulated.
         status = run(["git", "status", "--porcelain", "--", "data/"], REPO).stdout.strip()
         check(status == "", "real data/ has no uncommitted changes", status)
-        check(sorted(p.name for p in (REPO / "data").glob("*.csv")) == ["amount-2026-09-21.csv"],
-              "real data/ still holds exactly one file")
+        check((REPO / "data" / f"amount-{day1}.csv").is_file(),
+              "the fixture's source file still exists in the repo")
+        check(sorted(p.name for p in (REPO / "data").glob("amount-*.csv")) ==
+              [f"amount-{d}.csv" for d in src_dates],
+              "real data/ file set is unchanged", str(sorted(p.name for p in (REPO / "data").glob("*.csv"))))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 

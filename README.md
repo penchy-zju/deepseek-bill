@@ -21,10 +21,29 @@
 
 1. 拉取前一天账单 → 写入 `data/amount-YYYY-MM-DD.csv`（内容不变则不提交）
 2. 用 `scripts/build_site.py` 重新生成看板 `index.html` + `site-data.json`
-3. 跑校验：`scripts/verify_site.js`（独立复算 + 在 Node 里执行页面脚本交叉比对）、`scripts/test_publish.py`（在临时仓库里演练发布逻辑）
+3. 跑校验：workflow 结构 / shell 语法 / 日期推算 / 多日归档 / 页面复算 / 发布演练
 4. 把站点文件发布到 `gh-pages` 分支（GitHub Pages 自动生效）
 
-> 时间计算不依赖 `TZ=Asia/Shanghai`（该变量在部分环境不可靠），而是用纯 epoch 算术推导，并在写数据前做三重自检：区间必须正好 86400 秒、区间两端必须落在 UTC 16:00（= 北京时间 00:00）、归档日期标签必须与 `start` 对应的北京日期一致。任一不满足即报错退出，不会写错日期的数据。
+> 时间计算不依赖 `TZ=Asia/Shanghai`（该变量在部分环境不可靠），而是用纯 epoch 算术推导，并在写数据前做自检：区间必须是整天、两端必须落在 UTC 16:00（= 北京时间 00:00）。任一不满足即报错退出，不会写错日期的数据。
+
+### ⚠️ 关于「定时任务不按点触发」
+
+**GitHub 的 `schedule` 不保证准时**。本仓库第一次定时运行就是这样：cron 定在 `17:00 UTC`（北京 01:00），实际到 **20:01 UTC** 才启动，晚了约 3 小时。这是 GitHub 官方说明的行为（高峰期会排队，间隔越短越容易被延迟甚至丢弃），不是配置错误。
+
+因为延迟不可控，抓取日期**不按“任务实际启动时刻”推算**，否则延迟跨过北京午夜时会抓到一个还没结束的日期、拿到不完整的数据。现在的规则是：
+
+- **目标日期 = 当前最新的、已经完整结束的北京日**（延迟多久都不会错）
+- **抓取窗口**默认 1 天；只有当定时任务被延迟到整整跳过了若干天时，窗口才按需放宽（上限 3 天）去补抓。重抓已有日期是安全的：同一份数据产出逐字节相同，仍然不会产生多余提交
+
+推算逻辑集中在 [`scripts/usage_window.py`](scripts/usage_window.py)，并有单元测试（`scripts/test_usage_window.py`，覆盖准时 / 延迟 3 小时 / 延迟跨午夜 / 延迟一整天 / 跨年 / 手工触发等场景）。运行日志里可以直接看到本次的触发类型、目标日期与窗口：
+
+```
+Trigger            : schedule
+Window (Beijing)   : 2026-09-22 00:00  ->  2026-09-22 24:00  (1 day(s))
+Target usage date  : 2026-09-22
+```
+
+> 想要更准的触发时间，可以改 `cron` 到更靠后的时刻（例如 `0 20 * * *`），但延迟依然存在 —— 上面的日期规则已经让延迟无害，所以一般不必调整。**切勿**改成小于 1 小时间隔的 cron：GitHub 会更容易直接丢弃运行。
 
 ---
 
@@ -190,23 +209,31 @@ curl -sS -D - -o usage.zip \
 unzip -l usage.zip   # 确认内部文件名
 ```
 
-### 看板相关脚本
+### 本地校验脚本（CI 每次都会跑）
 
 ```bash
-# 校验 0：workflow 文件本身能否被解析（语法坏掉的 workflow 会被 GitHub 直接忽略）
+# 0) workflow 文件本身：YAML 结构 + 每个 run: 块的 shell 语法
+#    两个都必要：YAML 一坏 GitHub 会静默忽略整个 workflow；YAML 合法也不代表里面的 shell 合法
 python3 scripts/check_workflow.py
+python3 scripts/check_shell_blocks.py
 
-# 重新生成看板（只依赖 Python 标准库）
-python3 scripts/build_site.py
+# 1) 抓取日期 / 窗口推算（定时延迟、跨午夜、补抓、跨年、手工触发）
+python3 scripts/test_usage_window.py
 
-# 校验 1：独立复算 CSV + 在 Node 里真实执行页面脚本，交叉比对每个 Key/模型的数字
+# 2) 多日窗口的归档规范化（去 BOM/CR、稳定排序、可复现、不混入 cost）
+python3 scripts/test_multiday.py
+
+# 3) 独立复算 CSV + 在 Node 里真实执行页面脚本，交叉比对每个 Key/模型的数字
 node scripts/verify_site.js
 
-# 校验 2：在临时仓库里演练 gh-pages 发布（含重复运行不应产生空提交、旧文件应被清理）
+# 4) 在临时仓库里演练 gh-pages 发布（重复运行不应产生空提交、旧文件应被清理）
 python3 scripts/test_publish.py
+
+# 生成看板（只依赖 Python 标准库）
+python3 scripts/build_site.py
 ```
 
-前三个（`check_workflow.py` + `verify_site.js` + `test_publish.py`）每次运行都会在 CI 里执行一遍，任何一项失败都会阻止发布。
+以上任何一项失败都会阻止发布。这些测试都刻意**不依赖仓库当前有多少天数据**——早期版本把日期写死在测试里，结果第二天数据一进来 CI 就红了。
 
 另外几个**仅本地**使用的脚本（需要本机有 Chrome，且 `npm i ws` 提供 WebSocket）用于检查真实渲染效果，CI 里不跑：
 
