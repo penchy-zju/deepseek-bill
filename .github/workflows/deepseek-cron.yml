@@ -275,7 +275,7 @@ jobs:
           #    （曾经出现过一次语法错误，因为 CI 失败信息不够直白而多花了很多时间定位。）
           python3 -m py_compile scripts/build_site.py scripts/check_workflow.py scripts/test_publish.py \
             scripts/usage_window.py scripts/test_usage_window.py scripts/test_multiday.py \
-            scripts/test_compare_shapes.py
+            scripts/test_compare_shapes.py scripts/test_no_data.py
           node --check scripts/verify_site.js
           # 每个 run: 块的 shell 语法也检查（YAML 合法不代表里面的 shell 合法）
           python3 scripts/check_shell_blocks.py
@@ -290,7 +290,9 @@ jobs:
           node scripts/verify_site.js
           # 5) 对比表在所有数据形状下的渲染（尤其「每个 Key 都多模型」→ 每行都有小计）
           python3 scripts/test_compare_shapes.py
-          # 6) 在临时仓库里演练 gh-pages 发布逻辑（重复运行不应产生空提交）
+          # 6) 某天/整个仓库都没有用量数据时的行为（跳过而非崩溃/不写空文件）
+          python3 scripts/test_no_data.py
+          # 7) 在临时仓库里演练 gh-pages 发布逻辑（重复运行不应产生空提交）
           python3 scripts/test_publish.py
 
       - name: Commit dashboard

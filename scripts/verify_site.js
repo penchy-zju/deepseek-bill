@@ -43,6 +43,12 @@ for (const file of files) {
   const date = file.slice("amount-".length, -".csv".length);
   const text = fs.readFileSync(path.join(ROOT, "data", file), "utf8").replace(/^\uFEFF/, "");
   const lines = text.split(/\r?\n/).filter((l) => l.length);
+  if (lines.length < 2) {
+    // header-only file: the day exists but has no usage. It contributes no metric rows,
+    // so it must NOT appear as a date with data (see the dates assertion below).
+    console.log(`  note: ${file} has a header but no data rows (day with no usage)`);
+    continue;
+  }
   const header = lines[0].split(",");
   const idx = Object.fromEntries(header.map((h, i) => [h, i]));
   reference[date] = reference[date] || {};
@@ -113,6 +119,19 @@ try {
 
 ok(EXPORTS !== null, "page exposed its computation API");
 const { SITE, metricsOf, mergeModels } = EXPORTS;
+
+// ---------------------------------------------------------------- empty-data short circuit
+// With no days of data the page renders an intentional empty state and none of the metric
+// assertions below have anything to check. Failing here would break the whole workflow on a
+// day when the export legitimately contained no usage at all.
+if (!SITE.dates.length) {
+  console.log("\n== empty data ==");
+  ok(html.includes("还没有") && html.includes("const SITE = {"),
+     "page renders the empty-data state (and still embeds SITE)");
+  ok(Object.keys(reference).length === 0, "no data rows were found in data/ either");
+  console.log(`\nRESULT: ${checks - failures}/${checks} checks passed (no data to verify)`);
+  process.exit(failures ? 1 : 0);
+}
 
 // ---------------------------------------------------------------- step 3: assertions
 console.log("\n== data shape ==");
