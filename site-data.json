@@ -245,19 +245,59 @@
     },
     "name": "金哲慧"
    }
+  },
+  "2026-09-24": {
+   "sk-6d55d***********************5262": {
+    "masked": "sk-6d55d***********************5262",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 64085760,
+      "cache_miss": 38483,
+      "cost": {
+       "cache_hit": "1.28171520",
+       "cache_miss": "0.038483",
+       "output": "0.186548"
+      },
+      "cost_total": "1.50674620",
+      "output": 46637,
+      "requests": 102
+     }
+    },
+    "name": "高鹏程"
+   },
+   "sk-9c064***********************d8c9": {
+    "masked": "sk-9c064***********************d8c9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 94916736,
+      "cache_miss": 201665,
+      "cost": {
+       "cache_hit": "3.47430656",
+       "cache_miss": "0.331770",
+       "output": "2.240952"
+      },
+      "cost_total": "6.04702856",
+      "output": 319665,
+      "requests": 256
+     }
+    },
+    "name": "金哲慧"
+   }
   }
  },
- "data_version": "7349c4a094b2",
+ "data_version": "c3b54920e7d0",
  "dates": [
   "2026-09-21",
   "2026-09-22",
-  "2026-09-23"
+  "2026-09-23",
+  "2026-09-24"
  ],
- "default_date": "2026-09-23",
+ "default_date": "2026-09-24",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
-  "amount-2026-09-23.csv"
+  "amount-2026-09-23.csv",
+  "amount-2026-09-24.csv"
  ],
  "warnings": []
 }
