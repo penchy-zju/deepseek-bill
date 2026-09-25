@@ -283,21 +283,43 @@
     },
     "name": "金哲慧"
    }
+  },
+  "2026-09-25": {
+   "sk-87071***********************7263": {
+    "masked": "sk-87071***********************7263",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 528512,
+      "cache_miss": 148725,
+      "cost": {
+       "cache_hit": "0.07927680",
+       "cache_miss": "0.6692625",
+       "output": "0.1444095"
+      },
+      "cost_total": "0.89294880",
+      "output": 10697,
+      "requests": 4
+     }
+    },
+    "name": "祁殷俏"
+   }
   }
  },
- "data_version": "c3b54920e7d0",
+ "data_version": "6255a56f10c3",
  "dates": [
   "2026-09-21",
   "2026-09-22",
   "2026-09-23",
-  "2026-09-24"
+  "2026-09-24",
+  "2026-09-25"
  ],
- "default_date": "2026-09-24",
+ "default_date": "2026-09-25",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
   "amount-2026-09-23.csv",
-  "amount-2026-09-24.csv"
+  "amount-2026-09-24.csv",
+  "amount-2026-09-25.csv"
  ],
  "warnings": []
 }
