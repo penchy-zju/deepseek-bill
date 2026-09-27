@@ -1,0 +1,5 @@
+user_id,start_time_iso,end_time_iso,model,api_key_name,api_key,type,price,amount
+fe1e17b5-4351-4885-be38-be886b06a521,2026-09-27T15:00:00+08:00,2026-09-27T16:00:00+08:00,deepseek-v4-pro,贺海晏,sk-29aa1***********************9ea3,input_cache_hit_tokens,0.00000015,5120
+fe1e17b5-4351-4885-be38-be886b06a521,2026-09-27T15:00:00+08:00,2026-09-27T16:00:00+08:00,deepseek-v4-pro,贺海晏,sk-29aa1***********************9ea3,input_cache_miss_tokens,0.0000045,57109
+fe1e17b5-4351-4885-be38-be886b06a521,2026-09-27T15:00:00+08:00,2026-09-27T16:00:00+08:00,deepseek-v4-pro,贺海晏,sk-29aa1***********************9ea3,output_tokens,0.0000135,3731
+fe1e17b5-4351-4885-be38-be886b06a521,2026-09-27T15:00:00+08:00,2026-09-27T16:00:00+08:00,deepseek-v4-pro,贺海晏,sk-29aa1***********************9ea3,request_count,,2
