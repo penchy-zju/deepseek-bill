@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Verify the two viewing dimensions: per-day (recent N days) and cumulative-to-date.
 
-Checks, independently of the page's own code:
+The page's 累计至今 always aggregates the whole archive (first day -> latest day); the
+per-day view is capped at DAY_LIMIT (7) days. Checks here, independently of the page's own
+code:
   * combinedFor() over a date range equals a from-scratch aggregation of the same CSVs
-  * cumulative ranges are cumulative and monotonic as the end date advances
-  * the per-day view is capped at DAY_LIMIT (7) days while cumulative reaches the first day
-  * (optional, when a Chrome path is given) the real UI switches modes, re-renders, and the
-    KPI total agrees with the detail table in both modes
+  * the full range used by 累计至今 covers every archived day
+  * every prefix range is cumulative and monotonic as the end date advances
+  * the per-day view is capped at DAY_LIMIT while the cumulative range reaches the first day
+  * (optional, with a Chrome path) the real UI switches modes, hides the date picker in
+    cumulative mode, and keeps the KPI total in agreement with the detail table
 
 Run: python scripts/test_dimensions.py ["<chrome.exe>"]
 """
@@ -173,7 +176,22 @@ def main() -> int:
     check(g_req == r_req and abs(g_cost - r_cost) < 1e-6,
           f"totals match ({g_req} requests, {g_cost:.5f})", f"ref {r_req} / {r_cost:.5f}")
 
-    print("\n== cumulative ranges ==")
+    print("\n== the full range used by 累计至今 ==")
+    full = combined_for(dates)
+    ref_full = reference()
+    fq, fc = totals(full)
+    rq, rc = totals(ref_full)
+    check(fq == rq and abs(fc - rc) < 1e-9,
+          f"累计至今 covers all {len(dates)} archived days",
+          f"{fq}/{fc!r} vs {rq}/{rc!r}")
+    check(len(dates) > 0 and dates[0] in dates,
+          "the cumulative range starts at the first archived day", dates[0] if dates else "-")
+    # the earliest day really is folded in: its keys/models appear in the full aggregation
+    first_only = combined_for([dates[0]])
+    missing = [k for k in first_only if k not in full]
+    check(not missing, "the first day's keys are present in the cumulative view", str(missing))
+
+    print("\n== prefix ranges are cumulative and monotonic ==")
     prev_req = prev_cost = -1.0
     mono = True
     # 费用是逐行浮点累加，不同累加顺序末位会有 1e-14 级差异，因此用容差比较
@@ -188,12 +206,12 @@ def main() -> int:
         if rq < prev_req or c < prev_cost - 1e-9:
             mono = False
         prev_req, prev_cost = rq, c
-    check(mono, "every prefix range is cumulative and matches its own reference")
+    check(mono, "every prefix range matches its own reference and never decreases")
     single = combined_for([dates[-1]])
     s_ref = totals(reference([dates[-1]]))
     s_got = totals(single)
     check(s_got[0] == s_ref[0] and abs(s_got[1] - s_ref[1]) < 1e-9,
-          "a single-day range equals that day", f"{s_got} vs {s_ref}")
+          "a single-day slice equals that day", f"{s_got} vs {s_ref}")
 
     print("\n== day-view cap vs cumulative reach ==")
     limit = meta["DAY_LIMIT"]

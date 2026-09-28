@@ -79,11 +79,12 @@ const html = fs.readFileSync('index.html', 'utf8');
 const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 const cells = {};
 function makeEl(id) {
-  return { id, _html: "", value: "",
+  return { id, _html: "", value: "", children: [], style: {}, dataset: {},
     set innerHTML(v) { this._html = String(v); cells[id] = this._html; },
     get innerHTML() { return this._html; },
     set textContent(v) { cells[id] = String(v); }, get textContent() { return cells[id] || ""; },
-    appendChild() {}, addEventListener() {},
+    appendChild() {}, addEventListener() {}, setAttribute() {},
+    querySelectorAll() { return []; }, closest() { return null; },
     classList: { add() {}, remove() {}, contains: () => false }, options: [] };
 }
 const els = {};

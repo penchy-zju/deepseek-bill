@@ -269,8 +269,8 @@ TEMPLATE = r"""<!DOCTYPE html>
       <label for="keySelect">API Key</label>
       <select id="keySelect"></select>
     </div>
-    <div>
-      <label for="dateSelect" id="dateLabel">日期</label>
+    <div id="dateField">
+      <label for="dateSelect">日期</label>
       <select id="dateSelect"></select>
     </div>
   </div>
@@ -430,7 +430,7 @@ function init() {
   const dateSel = document.getElementById('dateSelect');
   const keySel = document.getElementById('keySelect');
   const modeSeg = document.getElementById('modeSeg');
-  const dateLabel = document.getElementById('dateLabel');
+  const dateField = document.getElementById('dateField');
   const rangeNote = document.getElementById('rangeNote');
 
   if (!SITE.dates.length) {
@@ -440,49 +440,44 @@ function init() {
     return;
   }
 
-  // 「按天」只提供最近 DAY_LIMIT 天；「累计至今」的截止日可以取任意历史日期。
+  // 「按天」只提供最近 DAY_LIMIT 天；「累计至今」固定累计到最新一天，不需要选日期。
   const DAY_LIMIT = 7;
   const dayChoices = SITE.dates.slice(-DAY_LIMIT);
-  const allChoices = SITE.dates;
+  const latestDate = SITE.dates[SITE.dates.length - 1];
   let mode = 'day';                       // 'day' | 'cumulative'
-  let endDate = SITE.dates[SITE.dates.length - 1];
+  let endDate = latestDate;
 
-  function choices() { return mode === 'cumulative' ? allChoices : dayChoices; }
-
-  // 某个截止日对应的日期集合：按天=当天；累计=从最早数据到该日（含）
+  // 某个日期对应的数据日期集合：按天=当天；累计=从最早数据一直到最新一天（含）
   function datesFor(end) {
     if (mode === 'day') return [end];
-    const i = SITE.dates.indexOf(end);
-    return SITE.dates.slice(0, i + 1);
+    return SITE.dates.slice();
   }
   // 当前视图的数据（对比表/明细表都用它）
   function currentView() { return combinedFor(datesFor(endDate)); }
 
   function renderDateOptions() {
-    const list = choices();
-    // 截止日不在当前维度的可选范围内时，回到最新的那一天
-    if (!list.includes(endDate)) endDate = list[list.length - 1];
+    dateField.style.display = mode === 'cumulative' ? 'none' : '';
+    if (mode === 'cumulative') return;    // 累计维度没有截止日期可选
+    if (!dayChoices.includes(endDate)) endDate = latestDate;
     dateSel.innerHTML = '';
-    list.slice().reverse().forEach(d => {
+    dayChoices.slice().reverse().forEach(d => {
       const o = document.createElement('option');
       o.value = d;
-      o.textContent = (mode === 'cumulative' ? '截至 ' : '') + d +
-        (d === SITE.dates[SITE.dates.length - 1] ? '（最新）' : '');
+      o.textContent = d + (d === latestDate ? '（最新）' : '');
       dateSel.appendChild(o);
     });
     dateSel.value = endDate;
-    dateLabel.textContent = mode === 'cumulative' ? '截止日期' : '日期';
   }
 
   function renderRangeNote() {
     const dates = datesFor(endDate);
     const from = dates[0];
-    const span = dates.length === 1 ? from : `${from} ~ ${endDate}（${dates.length} 天）`;
+    const span = dates.length === 1 ? from : `${from} ~ ${latestDate}（${dates.length} 天）`;
     // 「按天」下拉里可选的天数（最近 DAY_LIMIT 天），与当前是否只看其中一天无关
     const offered = Math.min(DAY_LIMIT, SITE.dates.length);
     const olderThanList = SITE.dates.length - offered;
     rangeNote.innerHTML = mode === 'cumulative'
-      ? `累计至今：<strong>${span}</strong> —— 从已有数据的第一天（${SITE.dates[0]}）开始累计；截止日期可任选历史某天。`
+      ? `累计至今：<strong>${span}</strong> —— 从已有数据的第一天（${SITE.dates[0]}）累计到最新一天（${latestDate}）。`
       : `按天：<strong>${span}</strong> —— 按天视图只提供最近 ${offered} 天` +
         (olderThanList > 0
           ? `；更早的 ${olderThanList} 天不在按天列表里，若要看包含它们的汇总请切到「累计至今」。`

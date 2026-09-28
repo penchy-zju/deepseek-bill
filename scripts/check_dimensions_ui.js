@@ -84,33 +84,36 @@ const getJSON = (p) => new Promise((res, rej) => {
   k = await kpi(); d = await detailTotal();
   const hint = await ev("document.querySelector('#kpis .kpi .hint').textContent");
   const note = await ev("document.getElementById('rangeNote').textContent");
-  const label = await ev("document.getElementById('dateLabel').textContent");
-  const cumLabels = await ev("[...document.getElementById('dateSelect').options].map(o => o.textContent)");
   const pressed = await ev(
     "[...document.querySelectorAll('#modeSeg button')].map(b => b.dataset.mode + ':' + b.getAttribute('aria-pressed')).join(',')");
+  const dateFieldHidden = await ev("document.getElementById('dateField').style.display === 'none'");
   ok(k === d, "KPI total equals the detail-table total in cumulative view", k + " vs " + d);
   ok(k !== dayKpi, "cumulative total differs from the single-day total", k + " vs " + dayKpi);
   ok(pressed === "day:false,cumulative:true", "segmented control reflects the mode", pressed);
-  ok(label === "截止日期", "date select is relabelled 截止日期", label);
+  ok(dateFieldHidden, "the date picker is hidden in 累计至今 (no end date to choose)");
   ok(hint.includes("天累计"), "hint states the accumulated day count", hint);
   ok(note.includes("累计至今"), "range note explains the cumulative range", note.slice(0, 60));
-  ok(cumLabels.every((t) => t.includes("截至")), "cumulative options are labelled 截至", cumLabels.join("|"));
-  ok(cumLabels.length === archived, "累计至今 end date can be any archived day (not capped at 7)",
-     `${cumLabels.length} vs ${archived}`);
-  // the cumulative note must name the first day the page knows about (its oldest date option)
-  const firstDay = await ev("document.getElementById('rangeNote').textContent.match(/\\d{4}-\\d{2}-\\d{2}/)[0]");
-  ok(firstDay === oldest, "cumulative range starts at the page's first day", `${firstDay} vs ${oldest}`);
-  const cumStartVal = await ev("document.getElementById('dateSelect').value");
-  ok(cumLabels.findIndex((t) => t.includes(cumStartVal)) >= 0, "the cumulative end date is one of the options");
+  // the cumulative note must name both ends: the first day and the latest day
+  const noteDates = await ev("document.getElementById('rangeNote').textContent.match(/\\d{4}-\\d{2}-\\d{2}/g)");
+  const latest = opts[0];
+  ok(noteDates[0] === oldest, "cumulative range starts at the page's first day", `${noteDates[0]} vs ${oldest}`);
+  ok(noteDates.includes(latest), "cumulative range ends at the latest day", `${noteDates.join(",")} vs ${latest}`);
 
-  console.log("== cumulative honours a shorter end date ==");
+  console.log("== cumulative is unaffected by the (hidden) date picker ==");
   const allCum = k;
-  await ev("(() => { const s = document.getElementById('dateSelect');"
-    + " const i = 0; s.value = [...s.options].map(o=>o.value)[1];"
-    + " s.dispatchEvent(new Event('change')); })()");
-  await sleep(400);
-  k = await kpi();
-  ok(k !== allCum, "choosing an earlier end date changes the cumulative total", k + " vs " + allCum);
+  const cumAgain = await ev("document.getElementById('rangeNote').textContent");
+  await clickMode("day");
+  await sleep(300);
+  await clickMode("cumulative");
+  await sleep(300);
+  ok((await kpi()) === allCum, "re-entering 累计至今 gives the same total", `${await kpi()} vs ${allCum}`);
+  ok((await ev("document.getElementById('rangeNote').textContent")) === cumAgain,
+     "the cumulative range is stable across mode switches");
+  ok(await ev("document.getElementById('dateField').style.display === 'none'"),
+     "the date picker stays hidden in 累计至今");
+  const detailTitle = await ev("document.getElementById('detailTitle').textContent");
+  ok(detailTitle.includes(oldest) && detailTitle.includes(latest),
+     "the detail heading names the full cumulative range", detailTitle);
 
   console.log("== back to day view ==");
   await clickMode("day");
@@ -130,10 +133,11 @@ const getJSON = (p) => new Promise((res, rej) => {
   console.log("\n== synthetic 10-day history (cap actually engaged) ==");
   const out = await runSynthetic(CHROME, 10);
   ok(out.dayCount === 7, "按天 capped at 7 of 10 days", String(out.dayCount));
-  ok(out.cumCount === 10, "累计至今 offers all 10 archived days", String(out.cumCount));
+  ok(out.cumFieldHidden, "累计至今 hides the date picker even with 10 archived days");
   ok(out.cumStart === "2030-01-01", "累计至今 starts at the first synthetic day", out.cumStart);
-  ok(out.oldestCumSum > out.sevenDaySum, "cumulative total exceeds the 7-day window total",
-     `${out.oldestCumSum} vs ${out.sevenDaySum}`);
+  ok(out.cumEnd === out.latest, "累计至今 ends at the latest synthetic day", `${out.cumEnd} vs ${out.latest}`);
+  ok(out.cumSum > out.sevenDaySum, "cumulative total exceeds the 7-day window total",
+     `${out.cumSum} vs ${out.sevenDaySum}`);
   ok(out.dayKpi === out.sevenDayOldest, "by-day shows the selected day's own total",
      `${out.dayKpi} vs ${out.sevenDayOldest}`);
 
@@ -217,12 +221,15 @@ async function runSynthetic(chromePath, days) {
 
   await e2("[...document.querySelectorAll('#modeSeg button')].find(b => b.dataset.mode === 'cumulative').click()");
   await sleep(400);
-  const cumCount = await optCount();
-  const cumStart = await e2("document.getElementById('rangeNote').textContent.match(/\\d{4}-\\d{2}-\\d{2}/)[0]");
-  const oldestCumSum = await kpi();
+  const cumFieldHidden = await e2("document.getElementById('dateField').style.display === 'none'");
+  const noteDates = await e2("document.getElementById('rangeNote').textContent.match(/\\d{4}-\\d{2}-\\d{2}/g)");
+  const cumStart = noteDates[0];
+  const cumEnd = noteDates[noteDates.length - 1];
+  const cumSum = await kpi();
+  const latest = dates[dates.length - 1];   // the newest synthetic day
   const dayKpi = sevenDayOldest;
 
   ws2.close(); proc.kill();
   try { fs.unlinkSync(tmp); } catch {}
-  return { dayCount, cumCount, cumStart, oldestCumSum, sevenDaySum, dayKpi, sevenDayOldest };
+  return { dayCount, cumFieldHidden, cumStart, cumEnd, cumSum, sevenDaySum, dayKpi, sevenDayOldest, latest };
 }
