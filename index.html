@@ -89,14 +89,23 @@
 
   <div class="card controls">
     <div>
+      <label>查看维度</label>
+      <div class="seg" id="modeSeg" role="group" aria-label="查看维度">
+        <button type="button" data-mode="day" aria-pressed="true">按天</button>
+        <button type="button" data-mode="cumulative" aria-pressed="false">累计至今</button>
+      </div>
+    </div>
+    <div>
       <label for="keySelect">API Key</label>
       <select id="keySelect"></select>
     </div>
     <div>
-      <label for="dateSelect">日期</label>
+      <label for="dateSelect" id="dateLabel">日期</label>
       <select id="dateSelect"></select>
     </div>
   </div>
+
+  <div class="note" id="rangeNote" style="margin-top:10px"></div>
 
   <div class="cards" id="kpis" style="margin-top:16px"></div>
 
@@ -222,36 +231,102 @@ function buildCompareHtml(day) {
 }
 
 
+  // 把若干天的数据合并成一个 {key: {name, masked, models:{...}}} 视图。
+  // 模块级纯函数，测试可直接调用它来验证「累计至今」的累加结果。
+  function combinedFor(dates) {
+    const out = {};
+    for (const d of dates) {
+      const day = SITE.data[d] || {};
+      for (const k of Object.keys(day)) {
+        const src = day[k];
+        const dst = out[k] = out[k] || { name: src.name, masked: src.masked, models: {} };
+        for (const m of Object.keys(src.models)) {
+          const a = src.models[m];
+          const b = dst.models[m] = dst.models[m] || {
+            requests: 0, cache_hit: 0, cache_miss: 0, output: 0, cost_total: 0,
+            cost: { cache_hit: 0, cache_miss: 0, output: 0 },
+          };
+          b.requests += a.requests; b.cache_hit += a.cache_hit;
+          b.cache_miss += a.cache_miss; b.output += a.output;
+          b.cost_total = sum(b.cost_total, a.cost_total);
+          for (const f of Object.keys(b.cost)) b.cost[f] = sum(b.cost[f], a.cost[f]);
+        }
+      }
+    }
+    return out;
+  }
+
 function init() {
   const dateSel = document.getElementById('dateSelect');
   const keySel = document.getElementById('keySelect');
+  const modeSeg = document.getElementById('modeSeg');
+  const dateLabel = document.getElementById('dateLabel');
+  const rangeNote = document.getElementById('rangeNote');
 
   if (!SITE.dates.length) {
     document.getElementById('subtitle').textContent = '暂无数据';
-    document.querySelectorAll('.card').forEach((el, i) => { if (i > 0) el.style.display = 'none'; });
+    document.querySelectorAll('.card, .seg').forEach((el, i) => { if (i > 0) el.style.display = 'none'; });
     document.getElementById('kpis').innerHTML = '<div class="card empty">data/ 目录下还没有 amount-*.csv 数据文件。</div>';
     return;
   }
 
-  SITE.dates.slice().reverse().forEach(d => {
-    const o = document.createElement('option');
-    o.value = d; o.textContent = d + (d === SITE.default_date ? '（最新）' : '');
-    dateSel.appendChild(o);
-  });
-  dateSel.value = SITE.default_date || SITE.dates[SITE.dates.length - 1];
+  // 可选的「截止日」= 最近 DAY_LIMIT 个有数据的日子（按天视图下就是可选日期）
+  const DAY_LIMIT = 7;
+  const selectable = SITE.dates.slice(-DAY_LIMIT);
+  let mode = 'day';                       // 'day' | 'cumulative'
+  let endDate = selectable[selectable.length - 1];
 
-  function keysFor(date) {
-    const entry = SITE.data[date] || {};
-    return Object.keys(entry).map(k => {
-      const t = metricsOf(entry[k].models);
-      return { key:k, name:entry[k].name, masked:entry[k].masked, total:t.cost_total };
+  // 某个截止日对应的日期集合：按天=当天；累计=从最早数据到该日（含）
+  function datesFor(end) {
+    if (mode === 'day') return [end];
+    const i = SITE.dates.indexOf(end);
+    return SITE.dates.slice(0, i + 1);
+  }
+  // 当前视图的数据（对比表/明细表都用它）
+  function currentView() { return combinedFor(datesFor(endDate)); }
+
+  function renderDateOptions() {
+    dateSel.innerHTML = '';
+    selectable.slice().reverse().forEach(d => {
+      const o = document.createElement('option');
+      o.value = d;
+      o.textContent = (mode === 'cumulative' ? '截至 ' : '') + d +
+        (d === SITE.dates[SITE.dates.length - 1] ? '（最新）' : '');
+      dateSel.appendChild(o);
+    });
+    dateSel.value = endDate;
+    dateLabel.textContent = mode === 'cumulative' ? '截止日期' : '日期';
+  }
+
+  function renderRangeNote() {
+    const dates = datesFor(endDate);
+    const from = dates[0];
+    const span = dates.length === 1 ? from : `${from} ~ ${endDate}（${dates.length} 天）`;
+    // 「按天」下拉里可选的天数（最近 DAY_LIMIT 天），与当前是否只看其中一天无关
+    const offered = Math.min(DAY_LIMIT, SITE.dates.length);
+    const olderThanList = SITE.dates.length - offered;
+    rangeNote.innerHTML = mode === 'cumulative'
+      ? `累计至今：<strong>${span}</strong> —— 从已有数据的第一天（${SITE.dates[0]}）开始累计。`
+      : `按天：<strong>${span}</strong> —— 按天视图只提供最近 ${offered} 天` +
+        (olderThanList > 0
+          ? `；更早的 ${olderThanList} 天不在按天列表里，若要看包含它们的汇总请切到「累计至今」。`
+          : `（目前共有 ${SITE.dates.length} 天数据）。`);
+  }
+
+  function keysFor() {
+    const view = currentView();
+    return Object.keys(view).map(k => {
+      const t = metricsOf(view[k].models);
+      return { key: k, name: view[k].name, masked: view[k].masked, total: t.cost_total };
     }).sort((a, b) => b.total - a.total);
   }
 
   function renderKeys() {
-    const date = dateSel.value;
-    const keys = keysFor(date);
-    const all = metricsOf(mergeModels(keys.map(k => SITE.data[date][k.key].models)));
+    const view = currentView();
+    const keys = keysFor();
+    const all = metricsOf(mergeModels(keys.map(k => view[k.key].models)));
+    // 记住当前选中的 Key，重建后尽量保留（不同日期/维度下 Key 集合可能变化）
+    const previous = keySel.value;
     keySel.innerHTML = '';
     const optAll = document.createElement('option');
     optAll.value = '__all__';
@@ -263,25 +338,32 @@ function init() {
       o.textContent = `${k.name} — ${fmtMoney(k.total)}`;
       keySel.appendChild(o);
     });
-    keySel.value = '__all__';
+    keySel.value = keys.some(k => k.key === previous) ? previous : '__all__';
+  }
+
+  // 当前视图的区间文字：按天=单个日期；累计=起始 ~ 截止
+  function viewRangeLabel() {
+    const dates = datesFor(endDate);
+    return dates.length === 1 ? dates[0] : `${dates[0]} ~ ${endDate}`;
   }
 
   function renderDetail() {
-    const date = dateSel.value;
     const sel = keySel.value;
-    const day = SITE.data[date] || {};
+    const view = currentView();          // 按天=当天；累计=从最早到截止日
     const isAll = sel === '__all__';
 
     const models = {};
     if (isAll) {
-      Object.assign(models, mergeModels(Object.keys(day).map(k => day[k].models)));
+      Object.assign(models, mergeModels(Object.keys(view).map(k => view[k].models)));
     } else {
-      Object.assign(models, (day[sel] || {models:{}}).models);
+      Object.assign(models, (view[sel] || {models:{}}).models);
     }
 
-    const label = isAll ? `全部 API Key（${Object.keys(day).length} 个）` :
-      `${(day[sel]||{}).name || ''} <span class="muted">${sel}</span>`;
-    document.getElementById('detailTitle').innerHTML = `按模型明细 · ${date} · ${label}`;
+    const label = isAll ? `全部 API Key（${Object.keys(view).length} 个）` :
+      `${(view[sel]||{}).name || ''} <span class="muted">${sel}</span>`;
+    const range = viewRangeLabel();
+    document.getElementById('detailTitle').innerHTML =
+      `按模型明细 · ${range} · ${label}`;
 
     const total = metricsOf(models);
     const rows = Object.entries(models).sort((a, b) => Number(b[1].cost_total) - Number(a[1].cost_total));
@@ -327,23 +409,26 @@ function init() {
   }
 
   function renderKpis() {
-    const date = dateSel.value;
     const sel = keySel.value;
-    const day = SITE.data[date] || {};
+    const view = currentView();
     const isAll = sel === '__all__';
     const models = isAll
-      ? mergeModels(Object.keys(day).map(k => day[k].models))
-      : (day[sel] || {models:{}}).models;
+      ? mergeModels(Object.keys(view).map(k => view[k].models))
+      : (view[sel] || {models:{}}).models;
     const t = metricsOf(models);
     const totTokens = t.cache_hit + t.cache_miss + t.output;
     const hitRate = (t.cache_hit + t.cache_miss) > 0
       ? (t.cache_hit / (t.cache_hit + t.cache_miss) * 100).toFixed(1) + '%' : '—';
+    const range = viewRangeLabel();
+    const days = datesFor(endDate).length;
     const kpis = [
-      { label:'总费用', value: fmtMoney(t.cost_total), hint: date + (isAll ? ' · 全部 Key' : '') },
+      { label:'总费用', value: fmtMoney(t.cost_total),
+        hint: range + (mode === 'cumulative' ? ` · ${days} 天累计` : '') + (isAll ? ' · 全部 Key' : '') },
       { label:'调用次数', value: fmtInt(t.requests), hint: '接口请求数' },
       { label:'总 tokens', value: fmtTokens(totTokens), hint: fmtInt(totTokens) },
       { label:'输入缓存命中率', value: hitRate, hint: `命中 ${fmtTokens(t.cache_hit)} / 未命中 ${fmtTokens(t.cache_miss)}` },
-      { label:'模型数', value: Object.keys(models).length, hint: '当日有调用的模型' },
+      { label:'模型数', value: Object.keys(models).length,
+        hint: mode === 'cumulative' ? '区间内有调用的模型' : '当日有调用的模型' },
     ];
     document.getElementById('kpis').innerHTML = kpis.map(k =>
       `<div class="kpi"><div class="label">${k.label}</div><div class="value">${k.value}</div><div class="hint">${k.hint}</div></div>`
@@ -351,14 +436,30 @@ function init() {
   }
 
   function renderCompare() {
-    const date = dateSel.value;
-    const day = SITE.data[date] || {};
-    document.getElementById('compareTable').innerHTML = buildCompareHtml(day);
+    document.getElementById('compareTable').innerHTML = buildCompareHtml(currentView());
   }
 
   function renderAll() { renderKpis(); renderDetail(); renderCompare(); }
 
-  dateSel.addEventListener('change', () => { renderKeys(); renderAll(); });
+  function refresh() {
+    renderDateOptions();
+    renderRangeNote();
+    renderKeys();
+    renderAll();
+  }
+
+  // 维度切换：按天 / 累计至今
+  modeSeg.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('button[data-mode]');
+    if (!btn || btn.dataset.mode === mode) return;
+    mode = btn.dataset.mode;
+    for (const b of modeSeg.querySelectorAll('button[data-mode]')) {
+      b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
+    }
+    refresh();
+  });
+
+  dateSel.addEventListener('change', () => { endDate = dateSel.value; refresh(); });
   keySel.addEventListener('change', renderAll);
 
   document.getElementById('subtitle').innerHTML =
@@ -376,8 +477,7 @@ function init() {
     `源数据：<a href="data/amount-${SITE.default_date}.csv">data/amount-*.csv</a> · ` +
     `<a href="site-data.json">site-data.json</a> · 由 GitHub Actions 每日自动更新`;
 
-  renderKeys();
-  renderAll();
+  refresh();
 }
 init();
 
@@ -386,7 +486,8 @@ init();
 if (typeof __SITE_TEST__ !== 'undefined' && __SITE_TEST__) {
   __SITE_TEST__({
     SITE, metricsOf, mergeModels, fmtInt, fmtMoney, fmtTokens,
-    buildCompareHtml,
+    buildCompareHtml, combinedFor,
+    DAY_LIMIT: 7,
     keysFor: date => {
       const entry = SITE.data[date] || {};
       return Object.keys(entry).map(k => {
