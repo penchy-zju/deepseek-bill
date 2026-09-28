@@ -55,6 +55,11 @@ const getJSON = (p) => new Promise((res, rej) => {
     await sleep(300);
   }
 
+  // 已归档天数（页面副标题里就写着），用来验证「按天最多 7 天、累计可到全部」
+  const archived = (await ev("document.getElementById('subtitle').textContent"
+    + ".match(/共 (\\d+) 天/)[1]")) * 1;
+  console.log(`  (archived days = ${archived})`);
+
   const kpi = () => ev("document.querySelector('#kpis .kpi .value').textContent");
   const detailTotal = () => ev(
     "(() => { const r = [...document.querySelectorAll('#detailTable tbody tr.total td')]; return r[r.length-1].textContent; })()");
@@ -64,7 +69,8 @@ const getJSON = (p) => new Promise((res, rej) => {
   console.log("== day view ==");
   const opts = await ev("[...document.getElementById('dateSelect').options].map(o => o.value)");
   const oldest = opts[opts.length - 1];   // day-view options are newest-first
-  ok(opts.length <= 7, "date dropdown offers at most 7 days", String(opts.length));
+  ok(opts.length === Math.min(7, archived), "按天 offers min(7, archived) days",
+     `${opts.length} vs ${Math.min(7, archived)}`);
   ok(opts[0] > opts[opts.length - 1], "options are newest-first", opts.join(","));
   const labels = await ev("[...document.getElementById('dateSelect').options].map(o => o.textContent)");
   ok(!labels.some((t) => t.includes("截至")), "day-view options are not labelled 截至", labels.join("|"));
@@ -89,6 +95,8 @@ const getJSON = (p) => new Promise((res, rej) => {
   ok(hint.includes("天累计"), "hint states the accumulated day count", hint);
   ok(note.includes("累计至今"), "range note explains the cumulative range", note.slice(0, 60));
   ok(cumLabels.every((t) => t.includes("截至")), "cumulative options are labelled 截至", cumLabels.join("|"));
+  ok(cumLabels.length === archived, "累计至今 end date can be any archived day (not capped at 7)",
+     `${cumLabels.length} vs ${archived}`);
   // the cumulative note must name the first day the page knows about (its oldest date option)
   const firstDay = await ev("document.getElementById('rangeNote').textContent.match(/\\d{4}-\\d{2}-\\d{2}/)[0]");
   ok(firstDay === oldest, "cumulative range starts at the page's first day", `${firstDay} vs ${oldest}`);
@@ -115,6 +123,106 @@ const getJSON = (p) => new Promise((res, rej) => {
   ok(dayOpts.includes(selVal), "the selected date is one of the offered options", selVal);
 
   ws.close(); chrome.kill();
+
+  // ---------------------------------------------------------------- >7 days fixture
+  // The live data may have exactly 7 days, in which case the cap is never exercised.
+  // Re-render the same page with a synthetic 10-day history to prove it.
+  console.log("\n== synthetic 10-day history (cap actually engaged) ==");
+  const out = await runSynthetic(CHROME, 10);
+  ok(out.dayCount === 7, "按天 capped at 7 of 10 days", String(out.dayCount));
+  ok(out.cumCount === 10, "累计至今 offers all 10 archived days", String(out.cumCount));
+  ok(out.cumStart === "2030-01-01", "累计至今 starts at the first synthetic day", out.cumStart);
+  ok(out.oldestCumSum > out.sevenDaySum, "cumulative total exceeds the 7-day window total",
+     `${out.oldestCumSum} vs ${out.sevenDaySum}`);
+  ok(out.dayKpi === out.sevenDayOldest, "by-day shows the selected day's own total",
+     `${out.dayKpi} vs ${out.sevenDayOldest}`);
+
   console.log(`\n  RESULT: ${n - fail}/${n} UI checks passed`);
   process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error("  " + e.message); process.exit(3); });
+
+// Render a page whose embedded SITE has `days` synthetic days, then inspect the controls.
+async function runSynthetic(chromePath, days) {
+  const fs = require("fs");
+  const os = require("os");
+  const path = require("path");
+  const base = fs.readFileSync("index.html", "utf8");
+  const dates = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(Date.UTC(2030, 0, 1 + i)).toISOString().slice(0, 10);
+    dates.push(d);
+  }
+  const data = {};
+  dates.forEach((d, i) => {
+    data[d] = {
+      "sk-synth***01": {
+        name: "S", masked: "sk-synth***01",
+        models: { m1: { requests: i + 1, cache_hit: 10, cache_miss: 10, output: 10,
+                        cost_total: (i + 1).toFixed(4),
+                        cost: { cache_hit: "0.01", cache_miss: "0.02", output: "0.03" } } },
+      },
+    };
+  });
+  const fake = { dates, default_date: dates[dates.length - 1], data_version: "synthetic",
+                 warnings: [], source_files: [], data };
+  const injected = base.replace(/const SITE = \{[\s\S]*?\};/, "const SITE = " + JSON.stringify(fake) + ";");
+  const tmp = path.join(os.tmpdir(), `dimsynth-${Date.now()}.html`);
+  fs.writeFileSync(tmp, injected, "utf8");
+
+  const port = PORT + 1;
+  const proc = spawn(chromePath, ["--headless=new", "--disable-gpu", "--no-first-run", "--hide-scrollbars",
+    "--remote-debugging-port=" + port, "--user-data-dir=" + os.tmpdir() + "\\cdp-syn-" + Date.now(),
+    "--window-size=1400,1200", "about:blank"], { stdio: "ignore" });
+  let tab = null;
+  for (let i = 0; i < 60 && !tab; i++) {
+    await sleep(500);
+    try {
+      tab = await new Promise((res, rej) => {
+        http.get({ host: "127.0.0.1", port, path: "/json/list" }, (r) => {
+          let d = ""; r.on("data", (c) => (d += c)); r.on("end", () => res(JSON.parse(d).find((x) => x.type === "page")));
+        }).on("error", rej);
+      });
+    } catch {}
+  }
+  const WebSocket = require("ws");
+  const ws2 = new WebSocket(tab.webSocketDebuggerUrl);
+  await new Promise((r) => ws2.on("open", r));
+  let id2 = 0; const pend2 = new Map();
+  ws2.on("message", (m) => { const j = JSON.parse(m); if (j.id && pend2.has(j.id)) { pend2.get(j.id)(j); pend2.delete(j.id); } });
+  const s2 = (method, params) => new Promise((res) => { const i = ++id2; pend2.set(i, res); ws2.send(JSON.stringify({ id: i, method, params })); });
+  const e2 = async (expr) => {
+    const r = await s2("Runtime.evaluate", { expression: expr, returnByValue: true });
+    if (r.result.exceptionDetails) throw new Error(r.result.exceptionDetails.exception?.description || "eval");
+    return r.result.result.value;
+  };
+  await s2("Page.enable"); await s2("Runtime.enable");
+  await s2("Page.navigate", { url: "file:///" + tmp.replace(/\\/g, "/") });
+  for (let i = 0; i < 40; i++) {
+    if (await e2("!!document.querySelector('#compareTable tbody tr')")) break;
+    await sleep(300);
+  }
+  const kpi = () => e2("document.querySelector('#kpis .kpi .value').textContent");
+  const optCount = () => e2("document.getElementById('dateSelect').options.length");
+
+  const dayCount = await optCount();
+  // the oldest day the by-day view can show (options are newest-first)
+  await e2("(() => { const s = document.getElementById('dateSelect');"
+    + " s.value = [...s.options].map(o => o.value).pop(); s.dispatchEvent(new Event('change')); })()");
+  await sleep(300);
+  const sevenDayOldest = await kpi();
+  await e2("(() => { const s = document.getElementById('dateSelect');"
+    + " s.value = [...s.options].map(o => o.value)[0]; s.dispatchEvent(new Event('change')); })()");
+  await sleep(300);
+  const sevenDaySum = await kpi();
+
+  await e2("[...document.querySelectorAll('#modeSeg button')].find(b => b.dataset.mode === 'cumulative').click()");
+  await sleep(400);
+  const cumCount = await optCount();
+  const cumStart = await e2("document.getElementById('rangeNote').textContent.match(/\\d{4}-\\d{2}-\\d{2}/)[0]");
+  const oldestCumSum = await kpi();
+  const dayKpi = sevenDayOldest;
+
+  ws2.close(); proc.kill();
+  try { fs.unlinkSync(tmp); } catch {}
+  return { dayCount, cumCount, cumStart, oldestCumSum, sevenDaySum, dayKpi, sevenDayOldest };
+}
