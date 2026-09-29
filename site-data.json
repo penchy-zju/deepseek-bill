@@ -399,9 +399,77 @@
     },
     "name": "朱钦辰"
    }
+  },
+  "2026-09-29": {
+   "sk-6d55d***********************5262": {
+    "masked": "sk-6d55d***********************5262",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 1676800,
+      "cache_miss": 38526,
+      "cost": {
+       "cache_hit": "0.06707200",
+       "cache_miss": "0.077052",
+       "output": "0.340040"
+      },
+      "cost_total": "0.48416400",
+      "output": 42505,
+      "requests": 44
+     }
+    },
+    "name": "高鹏程"
+   },
+   "sk-87071***********************7263": {
+    "masked": "sk-87071***********************7263",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 1001600,
+      "cache_miss": 289025,
+      "cost": {
+       "cache_hit": "0.3004800",
+       "cache_miss": "2.601225",
+       "output": "0.341874"
+      },
+      "cost_total": "3.2435790",
+      "output": 12662,
+      "requests": 6
+     }
+    },
+    "name": "祁殷俏"
+   },
+   "sk-930b8***********************7607": {
+    "masked": "sk-930b8***********************7607",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 1408,
+      "cache_miss": 72287,
+      "cost": {
+       "cache_hit": "0.00005632",
+       "cache_miss": "0.144574",
+       "output": "0.005384"
+      },
+      "cost_total": "0.15001432",
+      "output": 673,
+      "requests": 3
+     },
+     "deepseek-v4-pro": {
+      "cache_hit": 12741888,
+      "cache_miss": 201041,
+      "cost": {
+       "cache_hit": "3.8225664",
+       "cache_miss": "1.809369",
+       "output": "1.029807"
+      },
+      "cost_total": "6.6617424",
+      "output": 38141,
+      "requests": 78
+     }
+    },
+    "name": "朱钦辰"
+   }
   }
  },
- "data_version": "6dc45911ffeb",
+ "data_version": "9ef7e24f4afe",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -410,9 +478,10 @@
   "2026-09-25",
   "2026-09-26",
   "2026-09-27",
-  "2026-09-28"
+  "2026-09-28",
+  "2026-09-29"
  ],
- "default_date": "2026-09-28",
+ "default_date": "2026-09-29",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -421,7 +490,8 @@
   "amount-2026-09-25.csv",
   "amount-2026-09-26.csv",
   "amount-2026-09-27.csv",
-  "amount-2026-09-28.csv"
+  "amount-2026-09-28.csv",
+  "amount-2026-09-29.csv"
  ],
  "warnings": []
 }
