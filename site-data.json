@@ -467,9 +467,65 @@
     },
     "name": "朱钦辰"
    }
+  },
+  "2026-09-30": {
+   "sk-6d55d***********************5262": {
+    "masked": "sk-6d55d***********************5262",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 95922560,
+      "cache_miss": 339568,
+      "cost": {
+       "cache_hit": "3.55730432",
+       "cache_miss": "0.559056",
+       "output": "2.147384"
+      },
+      "cost_total": "6.26374432",
+      "output": 303863,
+      "requests": 344
+     }
+    },
+    "name": "高鹏程"
+   },
+   "sk-87071***********************7263": {
+    "masked": "sk-87071***********************7263",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 322944,
+      "cache_miss": 128455,
+      "cost": {
+       "cache_hit": "0.0968832",
+       "cache_miss": "1.156095",
+       "output": "0.095337"
+      },
+      "cost_total": "1.3483152",
+      "output": 3531,
+      "requests": 2
+     }
+    },
+    "name": "祁殷俏"
+   },
+   "sk-930b8***********************7607": {
+    "masked": "sk-930b8***********************7607",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 31673728,
+      "cache_miss": 928884,
+      "cost": {
+       "cache_hit": "1.26694912",
+       "cache_miss": "1.857768",
+       "output": "2.579528"
+      },
+      "cost_total": "5.70424512",
+      "output": 322441,
+      "requests": 288
+     }
+    },
+    "name": "朱钦辰"
+   }
   }
  },
- "data_version": "9ef7e24f4afe",
+ "data_version": "8a2851ec52ab",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -479,9 +535,10 @@
   "2026-09-26",
   "2026-09-27",
   "2026-09-28",
-  "2026-09-29"
+  "2026-09-29",
+  "2026-09-30"
  ],
- "default_date": "2026-09-29",
+ "default_date": "2026-09-30",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -491,7 +548,8 @@
   "amount-2026-09-26.csv",
   "amount-2026-09-27.csv",
   "amount-2026-09-28.csv",
-  "amount-2026-09-29.csv"
+  "amount-2026-09-29.csv",
+  "amount-2026-09-30.csv"
  ],
  "warnings": []
 }
