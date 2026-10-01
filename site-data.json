@@ -523,9 +523,41 @@
     },
     "name": "朱钦辰"
    }
+  },
+  "2026-10-01": {
+   "sk-930b8***********************7607": {
+    "masked": "sk-930b8***********************7607",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 13409792,
+      "cache_miss": 139042,
+      "cost": {
+       "cache_hit": "0.26819584",
+       "cache_miss": "0.139042",
+       "output": "0.563092"
+      },
+      "cost_total": "0.97032984",
+      "output": 140773,
+      "requests": 96
+     },
+     "deepseek-v4-pro": {
+      "cache_hit": 33480320,
+      "cache_miss": 2382094,
+      "cost": {
+       "cache_hit": "5.02204800",
+       "cache_miss": "10.7194230",
+       "output": "2.3125230"
+      },
+      "cost_total": "18.05399400",
+      "output": 171298,
+      "requests": 157
+     }
+    },
+    "name": "朱钦辰"
+   }
   }
  },
- "data_version": "8a2851ec52ab",
+ "data_version": "0a58f2205e51",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -536,9 +568,10 @@
   "2026-09-27",
   "2026-09-28",
   "2026-09-29",
-  "2026-09-30"
+  "2026-09-30",
+  "2026-10-01"
  ],
- "default_date": "2026-09-30",
+ "default_date": "2026-10-01",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -549,7 +582,8 @@
   "amount-2026-09-27.csv",
   "amount-2026-09-28.csv",
   "amount-2026-09-29.csv",
-  "amount-2026-09-30.csv"
+  "amount-2026-09-30.csv",
+  "amount-2026-10-01.csv"
  ],
  "warnings": []
 }
