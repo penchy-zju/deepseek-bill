@@ -825,9 +825,47 @@
     },
     "name": "金哲慧"
    }
+  },
+  "2026-10-10": {
+   "sk-97420***********************c434": {
+    "masked": "sk-97420***********************c434",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 0,
+      "cache_miss": 19773,
+      "cost": {
+       "cache_hit": "0",
+       "cache_miss": "0.019773",
+       "output": "0.000740"
+      },
+      "cost_total": "0.020513",
+      "output": 185,
+      "requests": 2
+     }
+    },
+    "name": "金胜利"
+   },
+   "sk-9c064***********************d8c9": {
+    "masked": "sk-9c064***********************d8c9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 71842688,
+      "cache_miss": 567953,
+      "cost": {
+       "cache_hit": "1.43685376",
+       "cache_miss": "0.567953",
+       "output": "1.224452"
+      },
+      "cost_total": "3.22925876",
+      "output": 306113,
+      "requests": 387
+     }
+    },
+    "name": "金哲慧"
+   }
   }
  },
- "data_version": "ac504887f501",
+ "data_version": "88c15d7e3092",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -842,9 +880,10 @@
   "2026-10-01",
   "2026-10-04",
   "2026-10-08",
-  "2026-10-09"
+  "2026-10-09",
+  "2026-10-10"
  ],
- "default_date": "2026-10-09",
+ "default_date": "2026-10-10",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -859,7 +898,8 @@
   "amount-2026-10-01.csv",
   "amount-2026-10-04.csv",
   "amount-2026-10-08.csv",
-  "amount-2026-10-09.csv"
+  "amount-2026-10-09.csv",
+  "amount-2026-10-10.csv"
  ],
  "warnings": []
 }
