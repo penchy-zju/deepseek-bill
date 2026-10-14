@@ -1043,9 +1043,47 @@
     },
     "name": "金哲慧"
    }
+  },
+  "2026-10-14": {
+   "sk-930b8***********************7607": {
+    "masked": "sk-930b8***********************7607",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 37774464,
+      "cache_miss": 846453,
+      "cost": {
+       "cache_hit": "1.34459392",
+       "cache_miss": "1.496915",
+       "output": "2.225020"
+      },
+      "cost_total": "5.06652892",
+      "output": 310391,
+      "requests": 317
+     }
+    },
+    "name": "朱钦辰"
+   },
+   "sk-9c064***********************d8c9": {
+    "masked": "sk-9c064***********************d8c9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 30890880,
+      "cache_miss": 76858,
+      "cost": {
+       "cache_hit": "1.23563520",
+       "cache_miss": "0.153716",
+       "output": "0.561968"
+      },
+      "cost_total": "1.95131920",
+      "output": 70246,
+      "requests": 52
+     }
+    },
+    "name": "金哲慧"
+   }
   }
  },
- "data_version": "3a233b8e54b9",
+ "data_version": "799afbec6c4a",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -1064,9 +1102,10 @@
   "2026-10-10",
   "2026-10-11",
   "2026-10-12",
-  "2026-10-13"
+  "2026-10-13",
+  "2026-10-14"
  ],
- "default_date": "2026-10-13",
+ "default_date": "2026-10-14",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -1085,7 +1124,8 @@
   "amount-2026-10-10.csv",
   "amount-2026-10-11.csv",
   "amount-2026-10-12.csv",
-  "amount-2026-10-13.csv"
+  "amount-2026-10-13.csv",
+  "amount-2026-10-14.csv"
  ],
  "warnings": []
 }
