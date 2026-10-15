@@ -1081,9 +1081,83 @@
     },
     "name": "金哲慧"
    }
+  },
+  "2026-10-15": {
+   "sk-63b33***********************c1e8": {
+    "masked": "sk-63b33***********************c1e8",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 3216640,
+      "cache_miss": 92773,
+      "cost": {
+       "cache_hit": "0.48249600",
+       "cache_miss": "0.4174785",
+       "output": "0.6332985"
+      },
+      "cost_total": "1.53327300",
+      "output": 46911,
+      "requests": 42
+     }
+    },
+    "name": "陈巍文"
+   },
+   "sk-87071***********************7263": {
+    "masked": "sk-87071***********************7263",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 1503232,
+      "cache_miss": 463190,
+      "cost": {
+       "cache_hit": "0.40392960",
+       "cache_miss": "3.1848120",
+       "output": "0.2745495"
+      },
+      "cost_total": "3.86329110",
+      "output": 12533,
+      "requests": 7
+     }
+    },
+    "name": "祁殷俏"
+   },
+   "sk-930b8***********************7607": {
+    "masked": "sk-930b8***********************7607",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 38013568,
+      "cache_miss": 834091,
+      "cost": {
+       "cache_hit": "1.38676224",
+       "cache_miss": "1.537783",
+       "output": "2.058056"
+      },
+      "cost_total": "4.98260124",
+      "output": 300499,
+      "requests": 322
+     }
+    },
+    "name": "朱钦辰"
+   },
+   "sk-9c064***********************d8c9": {
+    "masked": "sk-9c064***********************d8c9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 99868416,
+      "cache_miss": 211670,
+      "cost": {
+       "cache_hit": "3.94353408",
+       "cache_miss": "0.399912",
+       "output": "3.006344"
+      },
+      "cost_total": "7.34979008",
+      "output": 393522,
+      "requests": 269
+     }
+    },
+    "name": "金哲慧"
+   }
   }
  },
- "data_version": "799afbec6c4a",
+ "data_version": "ee8056b27a7f",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -1103,9 +1177,10 @@
   "2026-10-11",
   "2026-10-12",
   "2026-10-13",
-  "2026-10-14"
+  "2026-10-14",
+  "2026-10-15"
  ],
- "default_date": "2026-10-14",
+ "default_date": "2026-10-15",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -1125,7 +1200,8 @@
   "amount-2026-10-11.csv",
   "amount-2026-10-12.csv",
   "amount-2026-10-13.csv",
-  "amount-2026-10-14.csv"
+  "amount-2026-10-14.csv",
+  "amount-2026-10-15.csv"
  ],
  "warnings": []
 }
