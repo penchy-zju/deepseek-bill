@@ -1,0 +1,13 @@
+user_id,start_time_iso,end_time_iso,model,name,api_key_name,api_key,type,price,amount
+fe1e17b5-4351-4885-be38-be886b06a521,2026-10-17T15:00:00+08:00,2026-10-17T16:00:00+08:00,deepseek-v4-pro,deepseek-v4-pro,陈巍文,sk-63b33***********************c1e8,input_cache_hit_tokens,0.00000015,2398336
+fe1e17b5-4351-4885-be38-be886b06a521,2026-10-17T15:00:00+08:00,2026-10-17T16:00:00+08:00,deepseek-v4-pro,deepseek-v4-pro,陈巍文,sk-63b33***********************c1e8,input_cache_miss_tokens,0.0000045,191776
+fe1e17b5-4351-4885-be38-be886b06a521,2026-10-17T15:00:00+08:00,2026-10-17T16:00:00+08:00,deepseek-v4-pro,deepseek-v4-pro,陈巍文,sk-63b33***********************c1e8,output_tokens,0.0000135,13721
+fe1e17b5-4351-4885-be38-be886b06a521,2026-10-17T15:00:00+08:00,2026-10-17T16:00:00+08:00,deepseek-v4-pro,deepseek-v4-pro,陈巍文,sk-63b33***********************c1e8,request_count,,39
+fe1e17b5-4351-4885-be38-be886b06a521,2026-10-17T16:00:00+08:00,2026-10-17T17:00:00+08:00,deepseek-v4-pro,deepseek-v4-pro,陈巍文,sk-63b33***********************c1e8,input_cache_hit_tokens,0.00000015,1255808
+fe1e17b5-4351-4885-be38-be886b06a521,2026-10-17T16:00:00+08:00,2026-10-17T17:00:00+08:00,deepseek-v4-pro,deepseek-v4-pro,陈巍文,sk-63b33***********************c1e8,input_cache_miss_tokens,0.0000045,158419
+fe1e17b5-4351-4885-be38-be886b06a521,2026-10-17T16:00:00+08:00,2026-10-17T17:00:00+08:00,deepseek-v4-pro,deepseek-v4-pro,陈巍文,sk-63b33***********************c1e8,output_tokens,0.0000135,14146
+fe1e17b5-4351-4885-be38-be886b06a521,2026-10-17T16:00:00+08:00,2026-10-17T17:00:00+08:00,deepseek-v4-pro,deepseek-v4-pro,陈巍文,sk-63b33***********************c1e8,request_count,,12
+fe1e17b5-4351-4885-be38-be886b06a521,2026-10-17T18:00:00+08:00,2026-10-17T19:00:00+08:00,deepseek-v4-pro,deepseek-v4-pro,陈巍文,sk-63b33***********************c1e8,input_cache_hit_tokens,0.00000015,1362944
+fe1e17b5-4351-4885-be38-be886b06a521,2026-10-17T18:00:00+08:00,2026-10-17T19:00:00+08:00,deepseek-v4-pro,deepseek-v4-pro,陈巍文,sk-63b33***********************c1e8,input_cache_miss_tokens,0.0000045,20036
+fe1e17b5-4351-4885-be38-be886b06a521,2026-10-17T18:00:00+08:00,2026-10-17T19:00:00+08:00,deepseek-v4-pro,deepseek-v4-pro,陈巍文,sk-63b33***********************c1e8,output_tokens,0.0000135,12980
+fe1e17b5-4351-4885-be38-be886b06a521,2026-10-17T18:00:00+08:00,2026-10-17T19:00:00+08:00,deepseek-v4-pro,deepseek-v4-pro,陈巍文,sk-63b33***********************c1e8,request_count,,9
