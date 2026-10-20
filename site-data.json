@@ -1305,9 +1305,107 @@
     },
     "name": "陈巍文"
    }
+  },
+  "2026-10-19": {
+   "sk-87071***********************7263": {
+    "masked": "sk-87071***********************7263",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 1030656,
+      "cache_miss": 63657,
+      "cost": {
+       "cache_hit": "0.04122624",
+       "cache_miss": "0.127314",
+       "output": "0.170416"
+      },
+      "cost_total": "0.33895624",
+      "output": 21302,
+      "requests": 18
+     },
+     "deepseek-v4-pro": {
+      "cache_hit": 618880,
+      "cache_miss": 299344,
+      "cost": {
+       "cache_hit": "0.1856640",
+       "cache_miss": "2.694096",
+       "output": "0.188028"
+      },
+      "cost_total": "3.0677880",
+      "output": 6964,
+      "requests": 3
+     }
+    },
+    "name": "祁殷俏"
+   },
+   "sk-930b8***********************7607": {
+    "masked": "sk-930b8***********************7607",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 36370560,
+      "cache_miss": 1173736,
+      "cost": {
+       "cache_hit": "1.25735168",
+       "cache_miss": "2.230931",
+       "output": "2.352836"
+      },
+      "cost_total": "5.84111868",
+      "output": 319285,
+      "requests": 314
+     },
+     "deepseek-v4-pro": {
+      "cache_hit": 11038976,
+      "cache_miss": 520783,
+      "cost": {
+       "cache_hit": "3.3116928",
+       "cache_miss": "4.687047",
+       "output": "2.149065"
+      },
+      "cost_total": "10.1478048",
+      "output": 79595,
+      "requests": 68
+     }
+    },
+    "name": "朱钦辰"
+   },
+   "sk-9c064***********************d8c9": {
+    "masked": "sk-9c064***********************d8c9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 53889408,
+      "cache_miss": 1282592,
+      "cost": {
+       "cache_hit": "1.76431616",
+       "cache_miss": "2.494633",
+       "output": "2.609748"
+      },
+      "cost_total": "6.86869716",
+      "output": 355506,
+      "requests": 321
+     }
+    },
+    "name": "金哲慧"
+   },
+   "sk-f09cc***********************dbd4": {
+    "masked": "sk-f09cc***********************dbd4",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 0,
+      "cache_miss": 191,
+      "cost": {
+       "cache_hit": "0",
+       "cache_miss": "0.000191",
+       "output": "0.000752"
+      },
+      "cost_total": "0.000943",
+      "output": 188,
+      "requests": 1
+     }
+    },
+    "name": "email"
+   }
   }
  },
- "data_version": "3ef48a83440d",
+ "data_version": "3881e8b77c35",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -1331,9 +1429,10 @@
   "2026-10-15",
   "2026-10-16",
   "2026-10-17",
-  "2026-10-18"
+  "2026-10-18",
+  "2026-10-19"
  ],
- "default_date": "2026-10-18",
+ "default_date": "2026-10-19",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -1357,7 +1456,8 @@
   "amount-2026-10-15.csv",
   "amount-2026-10-16.csv",
   "amount-2026-10-17.csv",
-  "amount-2026-10-18.csv"
+  "amount-2026-10-18.csv",
+  "amount-2026-10-19.csv"
  ],
  "warnings": []
 }
