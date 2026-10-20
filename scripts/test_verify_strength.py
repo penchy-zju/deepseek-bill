@@ -51,6 +51,16 @@ MUTATIONS = [
     ("wrong figure: 费用合计 column shows the cache-hit cost",
      '<td class="grp">${fmtMoney(t.cost_total)}</td></tr>`;',
      '<td class="grp">${fmtMoney(t.cost.cache_hit)}</td></tr>`;'),
+    # styling guards: the KPI hover effect must stay visible, touch-scoped and motion-safe
+    ("KPI hover: the lift is removed",
+     "transform:translateY(-2px); box-shadow:var(--shadow-hover);",
+     "box-shadow:var(--shadow-hover);"),
+    ("KPI hover: no longer scoped to hover-capable pointers",
+     "@media (hover:hover) and (pointer:fine) {",
+     "@media all {"),
+    ("KPI hover: reduced-motion no longer cancels the lift",
+     ".kpi:hover { transform:none; }",
+     ".kpi:hover { }"),
 ]
 
 

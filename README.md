@@ -62,6 +62,8 @@ Target usage date  : 2026-09-22
 | 各项费用 / 费用合计 | 见下方「费用口径」 |
 | 输入缓存命中率 | `命中 ÷ (命中 + 未命中)`，反映上下文复用程度 |
 
+5 个指标卡片带**悬浮反馈**：鼠标移上去时轻微上浮 2px、投影加深、边框染上强调色、底色转为淡靛蓝（与表格行悬浮、分段按钮选中同一套配色），大号数字同时变成强调色。效果只在能真正悬浮的设备上启用（触屏点一下不会卡在悬浮态），并在系统开启「减少动态效果」时自动去掉位移、只保留配色反馈。
+
 ### 查看维度：按天 / 累计至今
 
 顶部「查看维度」有两个模式：
@@ -293,6 +295,11 @@ node scripts/browser_check.js "/path/to/chrome" "$PWD/index.html"
 
 # 检查掩码 Key 是否被浏览器当成电话号码自动着色
 node scripts/check_phone.js "/path/to/chrome" "$PWD/index.html"
+
+# 检查 5 个指标卡片的悬浮效果：用 CDP 派发真实鼠标移动让 :hover 生效，再读计算样式。
+# 覆盖：静止/悬浮/移出、不引起重排、触屏不粘住、prefers-reduced-motion 降级、亮暗两种主题，
+# 并输出 _kpi_hover_{light,dark}.png 供肉眼确认
+node scripts/check_kpi_hover.js "/path/to/chrome" "$PWD/index.html"
 ```
 
 ### 给这个仓库加新指标时

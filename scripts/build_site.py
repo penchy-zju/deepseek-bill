@@ -180,11 +180,16 @@ TEMPLATE = r"""<!DOCTYPE html>
     --bg:#f6f7f9; --card:#fff; --ink:#1b1f24; --muted:#6b7280; --line:#e5e7eb;
     --accent:#4f46e5; --accent-soft:#eef2ff; --good:#047857; --warn:#b45309;
     --shadow:0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.1);
+    /* 卡片悬浮：略微加深的投影 + 淡淡的强调色描边（保持“只有一种线”的克制感） */
+    --shadow-hover:0 6px 16px rgba(16,24,40,.10), 0 2px 6px rgba(16,24,40,.08);
+    --accent-edge:rgba(79,70,229,.34);
   }
   @media (prefers-color-scheme: dark) {
     :root { --bg:#0f1115; --card:#171a21; --ink:#e6e8eb; --muted:#9aa4b2; --line:#262b35;
             --accent:#8b8cf7; --accent-soft:#1e2130; --good:#34d399; --warn:#fbbf24;
-            --shadow:0 1px 2px rgba(0,0,0,.4); }
+            --shadow:0 1px 2px rgba(0,0,0,.4);
+            --shadow-hover:0 6px 16px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.45);
+            --accent-edge:rgba(139,140,247,.42); }
   }
   * { box-sizing:border-box; }
   body { margin:0; padding:24px 16px 64px; background:var(--bg); color:var(--ink);
@@ -195,10 +200,24 @@ TEMPLATE = r"""<!DOCTYPE html>
   .card { background:var(--card); border:1px solid var(--line); border-radius:12px;
           padding:18px; margin-top:16px; box-shadow:var(--shadow); }
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
-  .kpi { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow); }
-  .kpi .label { color:var(--muted); font-size:12px; }
-  .kpi .value { font-size:22px; font-weight:650; margin-top:4px; font-variant-numeric:tabular-nums; }
+  /* 5 个指标卡片的悬浮效果：轻微上浮 + 投影加深 + 边框染上强调色 + 数值转强调色。
+     底色沿用页面既有的 --accent-soft（表格行悬浮、分段按钮选中都是它），
+     所以视觉语言与页面其它部分一致，不加粗边框、不加动效杂耍。
+     过渡只作用于 transform/box-shadow/border-color/background/color，不引起重排。 */
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow);
+         transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease,
+                    background-color .18s ease; }
+  .kpi .label { color:var(--muted); font-size:12px; transition:color .18s ease; }
+  .kpi .value { font-size:22px; font-weight:650; margin-top:4px; font-variant-numeric:tabular-nums;
+                transition:color .18s ease; }
   .kpi .hint { color:var(--muted); font-size:11px; margin-top:2px; }
+  /* 只在能真正悬浮的设备上启用，避免触屏点一下后卡在悬浮态 */
+  @media (hover:hover) and (pointer:fine) {
+    .kpi:hover { transform:translateY(-2px); box-shadow:var(--shadow-hover);
+                 border-color:var(--accent-edge); background:var(--accent-soft); }
+    .kpi:hover .value { color:var(--accent); }
+    .kpi:hover .label { color:var(--ink); }
+  }
   .controls { display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; }
   label { display:block; font-size:12px; color:var(--muted); margin-bottom:5px; }
   select { appearance:none; background:var(--card); color:var(--ink); border:1px solid var(--line);
@@ -248,6 +267,11 @@ TEMPLATE = r"""<!DOCTYPE html>
   .rate { color:var(--muted); font-size:11.5px; }
   footer { color:var(--muted); font-size:12px; margin-top:22px; text-align:center; }
   .empty { text-align:center; color:var(--muted); padding:36px 0; }
+  /* 尊重系统「减少动态效果」：保留配色反馈，去掉位移与过渡 */
+  @media (prefers-reduced-motion:reduce) {
+    .kpi, .kpi .label, .kpi .value { transition:none; }
+    .kpi:hover { transform:none; }
+  }
 </style>
 </head>
 <body>

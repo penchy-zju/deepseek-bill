@@ -120,6 +120,36 @@ try {
 ok(EXPORTS !== null, "page exposed its computation API");
 const { SITE, metricsOf, mergeModels } = EXPORTS;
 
+// ---------------------------------------------------------------- styling
+// The KPI hover effect is cosmetic, so it is verified for real in a browser by
+// scripts/check_kpi_hover.js (local only, needs Chrome). What CI can guard cheaply is that
+// the rules still exist and keep their two quality properties: the effect must not stick on
+// touch devices, and it must be neutralised for users who ask for reduced motion.
+console.log("\n== KPI hover styling ==");
+{
+  const styleTag = (html.match(/<style>([\s\S]*?)<\/style>/) || [])[1] || "";
+  const kpiRule = (styleTag.match(/\.kpi\s*\{[^}]*\}/) || [""])[0];
+  ok(/transition:[^;]*transform/.test(kpiRule), "the KPI card animates transform");
+  const hoverRule = (styleTag.match(/\.kpi:hover\s*\{[^}]*\}/) || [""])[0];
+  ok(hoverRule.length > 0, "a .kpi:hover rule exists");
+  ok(/transform\s*:\s*translateY\(-[0-9.]+px\)/.test(hoverRule), "hover lifts the card");
+  ok(/box-shadow\s*:/.test(hoverRule), "hover changes the shadow");
+  ok(/border-color\s*:/.test(hoverRule), "hover tints the border");
+  ok(/background\s*:/.test(hoverRule), "hover washes the background");
+  // scoped to hover-capable pointers so a tap does not leave a card stuck in hover state
+  ok(/@media[^{]*hover\s*:\s*hover[^{]*\{[\s\S]*?\.kpi:hover/.test(styleTag),
+     "the hover rule is scoped to hover-capable devices");
+  // reduced motion: no movement, colour feedback kept
+  const rm = (styleTag.match(/@media[^{]*prefers-reduced-motion[^{]*\{[\s\S]*?\n\s*\}\s*\n/) || [""])[0];
+  ok(/\.kpi:hover\s*\{\s*transform\s*:\s*none/.test(rm), "reduced motion removes the lift");
+  // both themes define the hover tokens
+  const darkBlock = (styleTag.match(/prefers-color-scheme:\s*dark[\s\S]*?\n\s*\}\s*\n/) || [""])[0];
+  ok(/--shadow-hover/.test(styleTag) && /--accent-edge/.test(styleTag),
+     "hover tokens are defined");
+  ok(/--shadow-hover/.test(darkBlock) && /--accent-edge/.test(darkBlock),
+     "the dark theme overrides the hover tokens");
+}
+
 // ---------------------------------------------------------------- empty-data short circuit
 // With no days of data the page renders an intentional empty state and none of the metric
 // assertions below have anything to check. Failing here would break the whole workflow on a
