@@ -291,19 +291,50 @@ ok(hasMultiModel
 ok(!/#compareTable[^{]*nth-child\(2\)/.test(compare),
    "model column alignment does not rely on :nth-child(2)");
 
-// the 小计 row's numbers must equal the sum of the model rows above it
-const subtotalRow = (compare.match(/<tr class="total">[\s\S]*?<\/tr>/g) || [])
-  .find((r) => r.includes("小计"));
-if (subtotalRow && multiModelKeys.length) {
-  const cells = [...subtotalRow.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => m[1].replace(/<[^>]*>/g, "").trim());
-  const multiKey = multiModelKeys[0];
-  const t = metricsOf(SITE.data[date][multiKey].models);
-  ok(cells[0] === "小计", "subtotal row starts with the 小计 label", cells[0]);
-  ok(cells[1] === "", "subtotal row has an empty 模型 cell", JSON.stringify(cells[1]));
-  ok(cells[2] === fmtInt(t.requests), "subtotal 调用次数 is under the 调用次数 header",
-     `${cells[2]} vs ${fmtInt(t.requests)}`);
-  ok(cells[cells.length - 1] === fmtMoney(t.cost_total), "subtotal 费用合计 is in the last column",
-     `${cells[cells.length - 1]} vs ${fmtMoney(t.cost_total)}`);
+// The 小计 row's numbers must equal the sums of the model rows above it.
+//
+// Do NOT pair "the first rendered 小计 row" with "the first multi-model key": the table
+// renders keys sorted by 费用合计 descending, while Object.keys() is insertion order. The
+// two orders coincide only while there is a single multi-model key — with two, where the
+// pricier one was not inserted first, this check compared two different keys' subtotals
+// (rendered 382/¥15.9889 vs expected 21/¥3.4067) and failed even though the page was right.
+//
+// Instead compare every 小计 row's full 10-cell vector against every multi-model key's
+// expected vector as a multiset: that is independent of render order, and still catches a
+// column shift, because a shifted row cannot equal any key's expected vector.
+const subRows = (compare.match(/<tr class="total">[\s\S]*?<\/tr>/g) || [])
+  .filter((r) => r.includes("小计"))
+  .map((r) => [...r.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)]
+    .map((m) => m[1].replace(/<[^>]*>/g, "").trim()));
+
+function expectedSubtotalCells(key) {
+  const t = metricsOf(SITE.data[date][key].models);
+  return ["小计", "",
+    fmtInt(t.requests), fmtInt(t.cache_hit), fmtInt(t.cache_miss), fmtInt(t.output),
+    fmtMoney(t.cost.cache_hit), fmtMoney(t.cost.cache_miss), fmtMoney(t.cost.output),
+    fmtMoney(t.cost_total)];
+}
+
+ok(subRows.every((c) => c[0] === "小计"), "every 小计 row starts with the 小计 label",
+   JSON.stringify(subRows.map((c) => c[0])));
+ok(subRows.every((c) => c[1] === ""), "every 小计 row keeps an empty 模型 cell",
+   JSON.stringify(subRows.map((c) => c[1])));
+if (multiModelKeys.length) {
+  ok(subRows.every((c) => c.length === 10), "every 小计 row has 10 cells",
+     JSON.stringify(subRows.map((c) => c.length)));
+  const expected = multiModelKeys.map(expectedSubtotalCells);
+  const norm = (rows) => rows.map((r) => JSON.stringify(r)).sort();
+  const got = norm(subRows);
+  const want = norm(expected);
+  const same = got.length === want.length && got.every((v, i) => v === want[i]);
+  // name the keys in cost-desc order (the order the table renders) to make failures legible
+  const byCost = multiModelKeys.slice().sort((a, b) =>
+    metricsOf(SITE.data[date][b].models).cost_total - metricsOf(SITE.data[date][a].models).cost_total);
+  ok(same,
+     `each 小计 row equals the sums of its own key's models (${multiModelKeys.length} key(s))`,
+     same ? "" : `\n      rendered: ${subRows.map((r) => r[2] + "/" + r[9]).join("  ")}` +
+                 `\n      expected: ${expected.map((r) => r[2] + "/" + r[9]).join("  ")}` +
+                 `\n      keys by cost desc: ${byCost.map((k) => SITE.data[date][k].name).join(", ")}`);
 }
 
 // Regression guard for the multi-model rendering itself (the original "column shift" bug

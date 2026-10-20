@@ -32,10 +32,10 @@ def check(cond, label, extra=""):
 
 
 # ---------------------------------------------------------------- shapes under test
-def metrics(requests, tokens=1000):
+def metrics(requests, tokens=1000, cost="1.5"):
     return {
         "requests": requests, "cache_hit": tokens, "cache_miss": tokens, "output": tokens,
-        "cost_total": "1.5",
+        "cost_total": cost,
         "cost": {"cache_hit": "0.1", "cache_miss": "0.2", "output": "1.2"},
     }
 
@@ -63,6 +63,14 @@ SHAPES = {
     },
     "single key, single model": {
         "A": key("A", {"m-flash": metrics(1)}),
+    },
+    # Render order is 费用合计 descending, which is NOT Object.keys() order. With two
+    # multi-model keys whose costs are ordered opposite to their insertion order, "the
+    # first 小计 row" is a different key from "the first multi-model key" — pairing them
+    # blindly is what broke CI on 2026-10-19. This shape pins that down.
+    "two multi-model keys, cost order opposite to insertion order": {
+        "cheap": key("cheap", {"m-a": metrics(1, cost="1.0"), "m-b": metrics(2, cost="1.0")}),
+        "pricey": key("pricey", {"m-a": metrics(300, cost="50.0"), "m-b": metrics(400, cost="50.0")}),
     },
     "3 models on every key": {
         "A": key("A", {"a": metrics(1), "b": metrics(2), "c": metrics(3)}),
@@ -202,6 +210,35 @@ def main() -> int:
     check(len(grand) == 1, "one grand total row")
     gtds = [re.sub(r"<[^>]*>", "", t).strip() for t in re.findall(r"<td[^>]*>([\s\S]*?)</td>", grand[0])]
     check(gtds[0] == "全部合计" and gtds[2] == "28", "grand total sums all models", str(gtds[:3]))
+
+    # --- ordering trap: inserted cheap-then-pricey, rendered pricey-then-cheap ----
+    print("\n=== subtotal rows when render order != insertion order ===")
+    trap = SHAPES["two multi-model keys, cost order opposite to insertion order"]
+    thtml = render_compare(trap, "compareTable")
+    trs = [s for s in re.findall(r'<tr class="total">([\s\S]*?)</tr>', thtml) if "小计" in s]
+    tcells = [[re.sub(r"<[^>]*>", "", t).strip()
+               for t in re.findall(r"<td[^>]*>([\s\S]*?)</td>", s)] for s in trs]
+    check(len(tcells) == 2, "two 小计 rows", str(len(tcells)))
+    # build the expected rows independently, ordered by 费用合计 descending
+    expected = []
+    for k, v in sorted(trap.items(),
+                       key=lambda kv: -sum(float(m["cost_total"]) for m in kv[1]["models"].values())):
+        exp_req = sum(m["requests"] for m in v["models"].values())
+        exp_cost = sum(float(m["cost_total"]) for m in v["models"].values())
+        expected.append((v["name"], str(exp_req), exp_cost))
+    check([c[2] for c in tcells] == [e[1] for e in expected],
+          "小计 rows are ordered by 费用合计 descending (pricey first)",
+          f"rendered reqs={[c[2] for c in tcells]} expected={[e[1] for e in expected]}")
+    check(tcells[0][2] == "700", "the pricier key's 小计 row comes first", tcells[0][2])
+    check(tcells[0][1] == "", "…and still carries the empty 模型 cell", repr(tcells[0][1]))
+    # the multiset of subtotal figures must cover both keys regardless of order
+    check({c[2] for c in tcells} == {e[1] for e in expected},
+          "both keys appear as their own 小计 row",
+          f"{[c[2] for c in tcells]} vs {[e[1] for e in expected]}")
+    # and pairing "first rendered row" with "first inserted key" must NOT be assumed:
+    first_inserted = list(trap.values())[0]["name"]
+    check(first_inserted == "cheap" and tcells[0][2] != "3",
+          "the first rendered 小计 row is not the first-inserted key (the 2026-10-19 trap)")
 
     if not chrome:
         print("\n(no chrome path given; skipping rendered-geometry check)")

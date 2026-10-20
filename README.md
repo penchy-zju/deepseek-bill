@@ -263,7 +263,11 @@ python3 scripts/test_no_data.py
 #    给了 chrome 路径时会额外在真实浏览器里切换维度做 UI 检查
 python3 scripts/test_dimensions.py
 
-# 7) 在临时仓库里演练 gh-pages 发布（重复运行不应产生空提交、旧文件应被清理）
+# 7) 变异测试：故意把页面改坏（列错位 / 数值写错），确认 verify_site.js 真的会红
+#    防止「校验脚本悄无声息地什么都测不到」；在临时副本里跑，不动真实文件
+python3 scripts/test_verify_strength.py
+
+# 8) 在临时仓库里演练 gh-pages 发布（重复运行不应产生空提交、旧文件应被清理）
 python3 scripts/test_publish.py
 
 # 生成看板（只依赖 Python 标准库）
@@ -271,6 +275,8 @@ python3 scripts/build_site.py
 ```
 
 以上任何一项失败都会阻止发布。这些测试都刻意**不依赖仓库当前有多少天数据**——早期版本把日期写死在测试里，结果第二天数据一进来 CI 就红了。
+
+> 一个反复踩到的坑：**页面按「费用合计降序」渲染 Key，而 `Object.keys()` 是插入顺序**，两者只在「只有一个多模型 Key」时恰好一致。所以任何「第 N 个小计行 ↔ 第 N 个 Key」的配对都不能凭空假设顺序，要么按同样的排序规则推，要么做与顺序无关的集合比对。`test_compare_shapes.py` 里有一条专门的形状（两个多模型 Key、费用顺序与插入顺序相反）守着这个陷阱。
 
 另外几个**仅本地**使用的脚本（需要本机有 Chrome，且 `npm i ws` 提供 WebSocket）用于检查真实渲染效果，CI 里不跑：
 
