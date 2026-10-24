@@ -1687,9 +1687,65 @@
     },
     "name": "黄绵吉"
    }
+  },
+  "2026-10-24": {
+   "sk-63b33***********************c1e8": {
+    "masked": "sk-63b33***********************c1e8",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 1119232,
+      "cache_miss": 215428,
+      "cost": {
+       "cache_hit": "0.16788480",
+       "cache_miss": "0.9694260",
+       "output": "0.5507595"
+      },
+      "cost_total": "1.68807030",
+      "output": 40797,
+      "requests": 23
+     }
+    },
+    "name": "陈巍文"
+   },
+   "sk-97420***********************c434": {
+    "masked": "sk-97420***********************c434",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 39452672,
+      "cache_miss": 692018,
+      "cost": {
+       "cache_hit": "0.78905344",
+       "cache_miss": "0.692018",
+       "output": "0.817380"
+      },
+      "cost_total": "2.29845144",
+      "output": 204345,
+      "requests": 301
+     }
+    },
+    "name": "金胜利"
+   },
+   "sk-ed61d***********************0d75": {
+    "masked": "sk-ed61d***********************0d75",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 44619134,
+      "cache_miss": 2056424,
+      "cost": {
+       "cache_hit": "0.89238268",
+       "cache_miss": "2.056424",
+       "output": "2.153240"
+      },
+      "cost_total": "5.10204668",
+      "output": 538310,
+      "requests": 945
+     }
+    },
+    "name": "黄绵吉"
+   }
   }
  },
- "data_version": "0688abcf0914",
+ "data_version": "f8a047da1487",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -1718,9 +1774,10 @@
   "2026-10-20",
   "2026-10-21",
   "2026-10-22",
-  "2026-10-23"
+  "2026-10-23",
+  "2026-10-24"
  ],
- "default_date": "2026-10-23",
+ "default_date": "2026-10-24",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -1749,7 +1806,8 @@
   "amount-2026-10-20.csv",
   "amount-2026-10-21.csv",
   "amount-2026-10-22.csv",
-  "amount-2026-10-23.csv"
+  "amount-2026-10-23.csv",
+  "amount-2026-10-24.csv"
  ],
  "warnings": []
 }
