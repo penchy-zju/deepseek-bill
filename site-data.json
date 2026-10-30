@@ -1895,9 +1895,59 @@
     },
     "name": "黄绵吉"
    }
+  },
+  "2026-10-30": {
+   "sk-5946a***********************9c4b": {
+    "masked": "sk-5946a***********************9c4b",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 817408,
+      "cache_miss": 58300,
+      "cost": {
+       "cache_hit": "0.01634816",
+       "cache_miss": "0.058300",
+       "output": "0.025084"
+      },
+      "cost_total": "0.09973216",
+      "output": 6271,
+      "requests": 16
+     }
+    },
+    "name": "沈曲"
+   },
+   "sk-930b8***********************7607": {
+    "masked": "sk-930b8***********************7607",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 50370048,
+      "cache_miss": 1121444,
+      "cost": {
+       "cache_hit": "1.69090560",
+       "cache_miss": "1.791394",
+       "output": "1.479672"
+      },
+      "cost_total": "4.96197160",
+      "output": 232623,
+      "requests": 377
+     },
+     "deepseek-v4-pro": {
+      "cache_hit": 529280,
+      "cache_miss": 131629,
+      "cost": {
+       "cache_hit": "0.1587840",
+       "cache_miss": "1.184661",
+       "output": "0.050112"
+      },
+      "cost_total": "1.3935570",
+      "output": 1856,
+      "requests": 5
+     }
+    },
+    "name": "朱钦辰"
+   }
   }
  },
- "data_version": "b3164432afa2",
+ "data_version": "40b06c6a09cc",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -1931,9 +1981,10 @@
   "2026-10-25",
   "2026-10-26",
   "2026-10-27",
-  "2026-10-29"
+  "2026-10-29",
+  "2026-10-30"
  ],
- "default_date": "2026-10-29",
+ "default_date": "2026-10-30",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -1967,7 +2018,8 @@
   "amount-2026-10-25.csv",
   "amount-2026-10-26.csv",
   "amount-2026-10-27.csv",
-  "amount-2026-10-29.csv"
+  "amount-2026-10-29.csv",
+  "amount-2026-10-30.csv"
  ],
  "warnings": []
 }
