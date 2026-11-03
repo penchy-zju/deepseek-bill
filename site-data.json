@@ -10,11 +10,13 @@
       "cost": {
        "cache_hit": "0.34823040",
        "cache_miss": "5.3926380",
-       "output": "0.9721350"
+       "output": "0.9721350",
+       "tool": "0"
       },
       "cost_total": "6.71300340",
       "output": 38935,
-      "requests": 18
+      "requests": 18,
+      "tool_calls": 0
      }
     },
     "name": "贺海晏"
@@ -28,11 +30,13 @@
       "cost": {
        "cache_hit": "4.81161600",
        "cache_miss": "1.8735030",
-       "output": "2.6491860"
+       "output": "2.6491860",
+       "tool": "0"
       },
       "cost_total": "9.33430500",
       "output": 150577,
-      "requests": 99
+      "requests": 99,
+      "tool_calls": 0
      }
     },
     "name": "陈巍文"
@@ -46,11 +50,13 @@
       "cost": {
        "cache_hit": "0.04922880",
        "cache_miss": "0.249516",
-       "output": "0.322176"
+       "output": "0.322176",
+       "tool": "0"
       },
       "cost_total": "0.62092080",
       "output": 40272,
-      "requests": 14
+      "requests": 14,
+      "tool_calls": 0
      },
      "deepseek-v4-pro": {
       "cache_hit": 2711040,
@@ -58,11 +64,13 @@
       "cost": {
        "cache_hit": "0.64275840",
        "cache_miss": "6.7927590",
-       "output": "1.8334890"
+       "output": "1.8334890",
+       "tool": "0"
       },
       "cost_total": "9.26900640",
       "output": 85454,
-      "requests": 28
+      "requests": 28,
+      "tool_calls": 0
      }
     },
     "name": "祁殷俏"
@@ -76,11 +84,13 @@
       "cost": {
        "cache_hit": "3.75512064",
        "cache_miss": "0.497652",
-       "output": "1.626452"
+       "output": "1.626452",
+       "tool": "0"
       },
       "cost_total": "5.87922464",
       "output": 229053,
-      "requests": 275
+      "requests": 275,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -96,11 +106,13 @@
       "cost": {
        "cache_hit": "0.30624256",
        "cache_miss": "0.212327",
-       "output": "0.420592"
+       "output": "0.420592",
+       "tool": "0"
       },
       "cost_total": "0.93916156",
       "output": 105148,
-      "requests": 129
+      "requests": 129,
+      "tool_calls": 0
      }
     },
     "name": "赵杭"
@@ -114,11 +126,13 @@
       "cost": {
        "cache_hit": "5.06997760",
        "cache_miss": "0.478373",
-       "output": "2.072876"
+       "output": "2.072876",
+       "tool": "0"
       },
       "cost_total": "7.62122660",
       "output": 292103,
-      "requests": 591
+      "requests": 591,
+      "tool_calls": 0
      }
     },
     "name": "高鹏程"
@@ -132,11 +146,13 @@
       "cost": {
        "cache_hit": "0.02083072",
        "cache_miss": "0.346867",
-       "output": "0.161464"
+       "output": "0.161464",
+       "tool": "0"
       },
       "cost_total": "0.52916172",
       "output": 21328,
-      "requests": 5
+      "requests": 5,
+      "tool_calls": 0
      },
      "deepseek-v4-pro": {
       "cache_hit": 12144768,
@@ -144,11 +160,13 @@
       "cost": {
        "cache_hit": "3.29673600",
        "cache_miss": "3.9939120",
-       "output": "3.6512775"
+       "output": "3.6512775",
+       "tool": "0"
       },
       "cost_total": "10.94192550",
       "output": 146060,
-      "requests": 48
+      "requests": 48,
+      "tool_calls": 0
      }
     },
     "name": "祁殷俏"
@@ -162,11 +180,13 @@
       "cost": {
        "cache_hit": "3.28854784",
        "cache_miss": "0.238982",
-       "output": "1.544184"
+       "output": "1.544184",
+       "tool": "0"
       },
       "cost_total": "5.07171384",
       "output": 197241,
-      "requests": 269
+      "requests": 269,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -182,11 +202,13 @@
       "cost": {
        "cache_hit": "0.2658432",
        "cache_miss": "0.620172",
-       "output": "0.210843"
+       "output": "0.210843",
+       "tool": "0"
       },
       "cost_total": "1.0968582",
       "output": 7809,
-      "requests": 6
+      "requests": 6,
+      "tool_calls": 0
      }
     },
     "name": "贺海晏"
@@ -200,11 +222,13 @@
       "cost": {
        "cache_hit": "0.73403648",
        "cache_miss": "0.107918",
-       "output": "0.233620"
+       "output": "0.233620",
+       "tool": "0"
       },
       "cost_total": "1.07557448",
       "output": 58405,
-      "requests": 141
+      "requests": 141,
+      "tool_calls": 0
      }
     },
     "name": "赵杭"
@@ -218,11 +242,13 @@
       "cost": {
        "cache_hit": "3.71543552",
        "cache_miss": "0.166758",
-       "output": "0.695696"
+       "output": "0.695696",
+       "tool": "0"
       },
       "cost_total": "4.57788952",
       "output": 86962,
-      "requests": 178
+      "requests": 178,
+      "tool_calls": 0
      }
     },
     "name": "高鹏程"
@@ -236,11 +262,13 @@
       "cost": {
        "cache_hit": "2.75927552",
        "cache_miss": "0.588403",
-       "output": "1.907196"
+       "output": "1.907196",
+       "tool": "0"
       },
       "cost_total": "5.25487452",
       "output": 275473,
-      "requests": 174
+      "requests": 174,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -256,11 +284,13 @@
       "cost": {
        "cache_hit": "1.28171520",
        "cache_miss": "0.038483",
-       "output": "0.186548"
+       "output": "0.186548",
+       "tool": "0"
       },
       "cost_total": "1.50674620",
       "output": 46637,
-      "requests": 102
+      "requests": 102,
+      "tool_calls": 0
      }
     },
     "name": "高鹏程"
@@ -274,11 +304,13 @@
       "cost": {
        "cache_hit": "3.47430656",
        "cache_miss": "0.331770",
-       "output": "2.240952"
+       "output": "2.240952",
+       "tool": "0"
       },
       "cost_total": "6.04702856",
       "output": 319665,
-      "requests": 256
+      "requests": 256,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -294,11 +326,13 @@
       "cost": {
        "cache_hit": "0.07927680",
        "cache_miss": "0.6692625",
-       "output": "0.1444095"
+       "output": "0.1444095",
+       "tool": "0"
       },
       "cost_total": "0.89294880",
       "output": 10697,
-      "requests": 4
+      "requests": 4,
+      "tool_calls": 0
      }
     },
     "name": "祁殷俏"
@@ -314,11 +348,13 @@
       "cost": {
        "cache_hit": "0.00028800",
        "cache_miss": "0.5243895",
-       "output": "0.2567835"
+       "output": "0.2567835",
+       "tool": "0"
       },
       "cost_total": "0.78146100",
       "output": 19021,
-      "requests": 4
+      "requests": 4,
+      "tool_calls": 0
      }
     },
     "name": "贺海晏"
@@ -334,11 +370,13 @@
       "cost": {
        "cache_hit": "0.00076800",
        "cache_miss": "0.2569905",
-       "output": "0.0503685"
+       "output": "0.0503685",
+       "tool": "0"
       },
       "cost_total": "0.30812700",
       "output": 3731,
-      "requests": 2
+      "requests": 2,
+      "tool_calls": 0
      }
     },
     "name": "贺海晏"
@@ -354,11 +392,13 @@
       "cost": {
        "cache_hit": "1.03294976",
        "cache_miss": "1.601466",
-       "output": "0.702368"
+       "output": "0.702368",
+       "tool": "0"
       },
       "cost_total": "3.33678376",
       "output": 119673,
-      "requests": 197
+      "requests": 197,
+      "tool_calls": 0
      }
     },
     "name": "高鹏程"
@@ -372,11 +412,13 @@
       "cost": {
        "cache_hit": "0.4121856",
        "cache_miss": "1.467918",
-       "output": "0.606474"
+       "output": "0.606474",
+       "tool": "0"
       },
       "cost_total": "2.4865776",
       "output": 22462,
-      "requests": 8
+      "requests": 8,
+      "tool_calls": 0
      }
     },
     "name": "祁殷俏"
@@ -390,11 +432,13 @@
       "cost": {
        "cache_hit": "1.5252864",
        "cache_miss": "0.942111",
-       "output": "0.521586"
+       "output": "0.521586",
+       "tool": "0"
       },
       "cost_total": "2.9889834",
       "output": 19318,
-      "requests": 51
+      "requests": 51,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -410,11 +454,13 @@
       "cost": {
        "cache_hit": "0.06707200",
        "cache_miss": "0.077052",
-       "output": "0.340040"
+       "output": "0.340040",
+       "tool": "0"
       },
       "cost_total": "0.48416400",
       "output": 42505,
-      "requests": 44
+      "requests": 44,
+      "tool_calls": 0
      }
     },
     "name": "高鹏程"
@@ -428,11 +474,13 @@
       "cost": {
        "cache_hit": "0.3004800",
        "cache_miss": "2.601225",
-       "output": "0.341874"
+       "output": "0.341874",
+       "tool": "0"
       },
       "cost_total": "3.2435790",
       "output": 12662,
-      "requests": 6
+      "requests": 6,
+      "tool_calls": 0
      }
     },
     "name": "祁殷俏"
@@ -446,11 +494,13 @@
       "cost": {
        "cache_hit": "0.00005632",
        "cache_miss": "0.144574",
-       "output": "0.005384"
+       "output": "0.005384",
+       "tool": "0"
       },
       "cost_total": "0.15001432",
       "output": 673,
-      "requests": 3
+      "requests": 3,
+      "tool_calls": 0
      },
      "deepseek-v4-pro": {
       "cache_hit": 12741888,
@@ -458,11 +508,13 @@
       "cost": {
        "cache_hit": "3.8225664",
        "cache_miss": "1.809369",
-       "output": "1.029807"
+       "output": "1.029807",
+       "tool": "0"
       },
       "cost_total": "6.6617424",
       "output": 38141,
-      "requests": 78
+      "requests": 78,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -478,11 +530,13 @@
       "cost": {
        "cache_hit": "3.55730432",
        "cache_miss": "0.559056",
-       "output": "2.147384"
+       "output": "2.147384",
+       "tool": "0"
       },
       "cost_total": "6.26374432",
       "output": 303863,
-      "requests": 344
+      "requests": 344,
+      "tool_calls": 0
      }
     },
     "name": "高鹏程"
@@ -496,11 +550,13 @@
       "cost": {
        "cache_hit": "0.0968832",
        "cache_miss": "1.156095",
-       "output": "0.095337"
+       "output": "0.095337",
+       "tool": "0"
       },
       "cost_total": "1.3483152",
       "output": 3531,
-      "requests": 2
+      "requests": 2,
+      "tool_calls": 0
      }
     },
     "name": "祁殷俏"
@@ -514,11 +570,13 @@
       "cost": {
        "cache_hit": "1.26694912",
        "cache_miss": "1.857768",
-       "output": "2.579528"
+       "output": "2.579528",
+       "tool": "0"
       },
       "cost_total": "5.70424512",
       "output": 322441,
-      "requests": 288
+      "requests": 288,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -534,11 +592,13 @@
       "cost": {
        "cache_hit": "0.26819584",
        "cache_miss": "0.139042",
-       "output": "0.563092"
+       "output": "0.563092",
+       "tool": "0"
       },
       "cost_total": "0.97032984",
       "output": 140773,
-      "requests": 96
+      "requests": 96,
+      "tool_calls": 0
      },
      "deepseek-v4-pro": {
       "cache_hit": 33480320,
@@ -546,11 +606,13 @@
       "cost": {
        "cache_hit": "5.02204800",
        "cache_miss": "10.7194230",
-       "output": "2.3125230"
+       "output": "2.3125230",
+       "tool": "0"
       },
       "cost_total": "18.05399400",
       "output": 171298,
-      "requests": 157
+      "requests": 157,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -566,11 +628,13 @@
       "cost": {
        "cache_hit": "0.88337280",
        "cache_miss": "1.0085445",
-       "output": "1.2682845"
+       "output": "1.2682845",
+       "tool": "0"
       },
       "cost_total": "3.16020180",
       "output": 93947,
-      "requests": 61
+      "requests": 61,
+      "tool_calls": 0
      }
     },
     "name": "陈巍文"
@@ -584,11 +648,13 @@
       "cost": {
        "cache_hit": "0",
        "cache_miss": "0.000037",
-       "output": "0.012176"
+       "output": "0.012176",
+       "tool": "0"
       },
       "cost_total": "0.012213",
       "output": 3044,
-      "requests": 1
+      "requests": 1,
+      "tool_calls": 0
      }
     },
     "name": "email"
@@ -604,11 +670,13 @@
       "cost": {
        "cache_hit": "0.0012288",
        "cache_miss": "0.681399",
-       "output": "0.181899"
+       "output": "0.181899",
+       "tool": "0"
       },
       "cost_total": "0.8645268",
       "output": 6737,
-      "requests": 3
+      "requests": 3,
+      "tool_calls": 0
      }
     },
     "name": "贺海晏"
@@ -622,11 +690,13 @@
       "cost": {
        "cache_hit": "0.26396160",
        "cache_miss": "0.220966",
-       "output": "1.206608"
+       "output": "1.206608",
+       "tool": "0"
       },
       "cost_total": "1.69153560",
       "output": 150826,
-      "requests": 82
+      "requests": 82,
+      "tool_calls": 0
      }
     },
     "name": "高鹏程"
@@ -640,11 +710,13 @@
       "cost": {
        "cache_hit": "0.1080576",
        "cache_miss": "0.935154",
-       "output": "0.190269"
+       "output": "0.190269",
+       "tool": "0"
       },
       "cost_total": "1.2334806",
       "output": 7047,
-      "requests": 2
+      "requests": 2,
+      "tool_calls": 0
      }
     },
     "name": "祁殷俏"
@@ -658,11 +730,13 @@
       "cost": {
        "cache_hit": "0.06266368",
        "cache_miss": "0.164636",
-       "output": "0.115900"
+       "output": "0.115900",
+       "tool": "0"
       },
       "cost_total": "0.34319968",
       "output": 20746,
-      "requests": 33
+      "requests": 33,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -676,11 +750,13 @@
       "cost": {
        "cache_hit": "2.84399872",
        "cache_miss": "0.205334",
-       "output": "1.251492"
+       "output": "1.251492",
+       "tool": "0"
       },
       "cost_total": "4.30082472",
       "output": 162698,
-      "requests": 173
+      "requests": 173,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -694,11 +770,13 @@
       "cost": {
        "cache_hit": "0",
        "cache_miss": "0.007148",
-       "output": "0.000104"
+       "output": "0.000104",
+       "tool": "0"
       },
       "cost_total": "0.007252",
       "output": 13,
-      "requests": 1
+      "requests": 1,
+      "tool_calls": 0
      }
     },
     "name": "email"
@@ -714,11 +792,13 @@
       "cost": {
        "cache_hit": "10.04004480",
        "cache_miss": "3.9988395",
-       "output": "6.8000985"
+       "output": "6.8000985",
+       "tool": "0"
       },
       "cost_total": "20.83898280",
       "output": 331527,
-      "requests": 169
+      "requests": 169,
+      "tool_calls": 0
      }
     },
     "name": "俞佳杰"
@@ -732,11 +812,13 @@
       "cost": {
        "cache_hit": "0.01728768",
        "cache_miss": "0.070209",
-       "output": "0.042456"
+       "output": "0.042456",
+       "tool": "0"
       },
       "cost_total": "0.12995268",
       "output": 10614,
-      "requests": 15
+      "requests": 15,
+      "tool_calls": 0
      }
     },
     "name": "沈曲"
@@ -750,11 +832,13 @@
       "cost": {
        "cache_hit": "0.80047360",
        "cache_miss": "0.112103",
-       "output": "1.059744"
+       "output": "1.059744",
+       "tool": "0"
       },
       "cost_total": "1.97232060",
       "output": 163021,
-      "requests": 82
+      "requests": 82,
+      "tool_calls": 0
      }
     },
     "name": "高鹏程"
@@ -768,11 +852,13 @@
       "cost": {
        "cache_hit": "0.5150592",
        "cache_miss": "0.119160",
-       "output": "0.416691"
+       "output": "0.416691",
+       "tool": "0"
       },
       "cost_total": "1.0509102",
       "output": 15433,
-      "requests": 7
+      "requests": 7,
+      "tool_calls": 0
      }
     },
     "name": "祁殷俏"
@@ -786,11 +872,13 @@
       "cost": {
        "cache_hit": "0.09049088",
        "cache_miss": "0.258347",
-       "output": "0.326556"
+       "output": "0.326556",
+       "tool": "0"
       },
       "cost_total": "0.67539388",
       "output": 48166,
-      "requests": 43
+      "requests": 43,
+      "tool_calls": 0
      },
      "deepseek-v4-pro": {
       "cache_hit": 4159616,
@@ -798,11 +886,13 @@
       "cost": {
        "cache_hit": "1.18254720",
        "cache_miss": "1.5953175",
-       "output": "1.0675395"
+       "output": "1.0675395",
+       "tool": "0"
       },
       "cost_total": "3.84540420",
       "output": 46155,
-      "requests": 39
+      "requests": 39,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -816,11 +906,13 @@
       "cost": {
        "cache_hit": "3.39890944",
        "cache_miss": "0.414750",
-       "output": "1.809720"
+       "output": "1.809720",
+       "tool": "0"
       },
       "cost_total": "5.62337944",
       "output": 236097,
-      "requests": 228
+      "requests": 228,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -836,11 +928,13 @@
       "cost": {
        "cache_hit": "0",
        "cache_miss": "0.019773",
-       "output": "0.000740"
+       "output": "0.000740",
+       "tool": "0"
       },
       "cost_total": "0.020513",
       "output": 185,
-      "requests": 2
+      "requests": 2,
+      "tool_calls": 0
      }
     },
     "name": "金胜利"
@@ -854,11 +948,13 @@
       "cost": {
        "cache_hit": "1.43685376",
        "cache_miss": "0.567953",
-       "output": "1.224452"
+       "output": "1.224452",
+       "tool": "0"
       },
       "cost_total": "3.22925876",
       "output": 306113,
-      "requests": 387
+      "requests": 387,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -874,11 +970,13 @@
       "cost": {
        "cache_hit": "5.15193600",
        "cache_miss": "2.0427300",
-       "output": "1.5714270"
+       "output": "1.5714270",
+       "tool": "0"
       },
       "cost_total": "8.76609300",
       "output": 116402,
-      "requests": 106
+      "requests": 106,
+      "tool_calls": 0
      }
     },
     "name": "陈巍文"
@@ -894,11 +992,13 @@
       "cost": {
        "cache_hit": "2.05436160",
        "cache_miss": "0.1490175",
-       "output": "0.4044465"
+       "output": "0.4044465",
+       "tool": "0"
       },
       "cost_total": "2.60782560",
       "output": 29959,
-      "requests": 31
+      "requests": 31,
+      "tool_calls": 0
      }
     },
     "name": "陈巍文"
@@ -912,11 +1012,13 @@
       "cost": {
        "cache_hit": "0.27889664",
        "cache_miss": "0.320033",
-       "output": "0.564428"
+       "output": "0.564428",
+       "tool": "0"
       },
       "cost_total": "1.16335764",
       "output": 141107,
-      "requests": 117
+      "requests": 117,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -930,11 +1032,13 @@
       "cost": {
        "cache_hit": "3.77729792",
        "cache_miss": "0.304676",
-       "output": "1.615584"
+       "output": "1.615584",
+       "tool": "0"
       },
       "cost_total": "5.69755792",
       "output": 213138,
-      "requests": 185
+      "requests": 185,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -950,11 +1054,13 @@
       "cost": {
        "cache_hit": "7.46144640",
        "cache_miss": "0.3054465",
-       "output": "1.1371050"
+       "output": "1.1371050",
+       "tool": "0"
       },
       "cost_total": "8.90399790",
       "output": 84230,
-      "requests": 92
+      "requests": 92,
+      "tool_calls": 0
      }
     },
     "name": "陈巍文"
@@ -968,11 +1074,13 @@
       "cost": {
        "cache_hit": "0.00129792",
        "cache_miss": "0.025386",
-       "output": "0.024636"
+       "output": "0.024636",
+       "tool": "0"
       },
       "cost_total": "0.05131992",
       "output": 6159,
-      "requests": 7
+      "requests": 7,
+      "tool_calls": 0
      }
     },
     "name": "高鹏程"
@@ -986,11 +1094,13 @@
       "cost": {
        "cache_hit": "0.01691648",
        "cache_miss": "0.088167",
-       "output": "0.126196"
+       "output": "0.126196",
+       "tool": "0"
       },
       "cost_total": "0.23127948",
       "output": 31549,
-      "requests": 12
+      "requests": 12,
+      "tool_calls": 0
      },
      "deepseek-v4-pro": {
       "cache_hit": 265728,
@@ -998,11 +1108,13 @@
       "cost": {
        "cache_hit": "0.0797184",
        "cache_miss": "2.298708",
-       "output": "0.100872"
+       "output": "0.100872",
+       "tool": "0"
       },
       "cost_total": "2.4792984",
       "output": 3736,
-      "requests": 2
+      "requests": 2,
+      "tool_calls": 0
      }
     },
     "name": "祁殷俏"
@@ -1016,11 +1128,13 @@
       "cost": {
        "cache_hit": "1.42063616",
        "cache_miss": "1.341684",
-       "output": "2.840592"
+       "output": "2.840592",
+       "tool": "0"
       },
       "cost_total": "5.60291216",
       "output": 355074,
-      "requests": 323
+      "requests": 323,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -1034,11 +1148,13 @@
       "cost": {
        "cache_hit": "3.10468608",
        "cache_miss": "0.279159",
-       "output": "2.246796"
+       "output": "2.246796",
+       "tool": "0"
       },
       "cost_total": "5.63064108",
       "output": 306774,
-      "requests": 264
+      "requests": 264,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -1054,11 +1170,13 @@
       "cost": {
        "cache_hit": "1.34459392",
        "cache_miss": "1.496915",
-       "output": "2.225020"
+       "output": "2.225020",
+       "tool": "0"
       },
       "cost_total": "5.06652892",
       "output": 310391,
-      "requests": 317
+      "requests": 317,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -1072,11 +1190,13 @@
       "cost": {
        "cache_hit": "1.23563520",
        "cache_miss": "0.153716",
-       "output": "0.561968"
+       "output": "0.561968",
+       "tool": "0"
       },
       "cost_total": "1.95131920",
       "output": 70246,
-      "requests": 52
+      "requests": 52,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -1092,11 +1212,13 @@
       "cost": {
        "cache_hit": "0.48249600",
        "cache_miss": "0.4174785",
-       "output": "0.6332985"
+       "output": "0.6332985",
+       "tool": "0"
       },
       "cost_total": "1.53327300",
       "output": 46911,
-      "requests": 42
+      "requests": 42,
+      "tool_calls": 0
      }
     },
     "name": "陈巍文"
@@ -1110,11 +1232,13 @@
       "cost": {
        "cache_hit": "0.40392960",
        "cache_miss": "3.1848120",
-       "output": "0.2745495"
+       "output": "0.2745495",
+       "tool": "0"
       },
       "cost_total": "3.86329110",
       "output": 12533,
-      "requests": 7
+      "requests": 7,
+      "tool_calls": 0
      }
     },
     "name": "祁殷俏"
@@ -1128,11 +1252,13 @@
       "cost": {
        "cache_hit": "1.38676224",
        "cache_miss": "1.537783",
-       "output": "2.058056"
+       "output": "2.058056",
+       "tool": "0"
       },
       "cost_total": "4.98260124",
       "output": 300499,
-      "requests": 322
+      "requests": 322,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -1146,11 +1272,13 @@
       "cost": {
        "cache_hit": "3.94353408",
        "cache_miss": "0.399912",
-       "output": "3.006344"
+       "output": "3.006344",
+       "tool": "0"
       },
       "cost_total": "7.34979008",
       "output": 393522,
-      "requests": 269
+      "requests": 269,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -1166,11 +1294,13 @@
       "cost": {
        "cache_hit": "0.04303360",
        "cache_miss": "0.061801",
-       "output": "0.036628"
+       "output": "0.036628",
+       "tool": "0"
       },
       "cost_total": "0.14146260",
       "output": 9157,
-      "requests": 39
+      "requests": 39,
+      "tool_calls": 0
      }
     },
     "name": "沈曲"
@@ -1184,11 +1314,13 @@
       "cost": {
        "cache_hit": "2.50513920",
        "cache_miss": "8.699426",
-       "output": "6.670984"
+       "output": "6.670984",
+       "tool": "0"
       },
       "cost_total": "17.87554920",
       "output": 833873,
-      "requests": 925
+      "requests": 925,
+      "tool_calls": 0
      }
     },
     "name": "高鹏程"
@@ -1202,11 +1334,13 @@
       "cost": {
        "cache_hit": "0.04900864",
        "cache_miss": "0.050327",
-       "output": "0.125856"
+       "output": "0.125856",
+       "tool": "0"
       },
       "cost_total": "0.22519164",
       "output": 27836,
-      "requests": 31
+      "requests": 31,
+      "tool_calls": 0
      }
     },
     "name": "祁殷俏"
@@ -1220,11 +1354,13 @@
       "cost": {
        "cache_hit": "0.40029184",
        "cache_miss": "0.388854",
-       "output": "0.710480"
+       "output": "0.710480",
+       "tool": "0"
       },
       "cost_total": "1.49962584",
       "output": 88810,
-      "requests": 86
+      "requests": 86,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -1238,11 +1374,13 @@
       "cost": {
        "cache_hit": "6.41058548",
        "cache_miss": "1.855770",
-       "output": "5.545908"
+       "output": "5.545908",
+       "tool": "0"
       },
       "cost_total": "13.81226348",
       "output": 745480,
-      "requests": 781
+      "requests": 781,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -1256,11 +1394,13 @@
       "cost": {
        "cache_hit": "0",
        "cache_miss": "0.000068",
-       "output": "0.000008"
+       "output": "0.000008",
+       "tool": "0"
       },
       "cost_total": "0.000076",
       "output": 1,
-      "requests": 1
+      "requests": 1,
+      "tool_calls": 0
      }
     },
     "name": "丁莞尔"
@@ -1276,11 +1416,13 @@
       "cost": {
        "cache_hit": "0.75256320",
        "cache_miss": "1.6660395",
-       "output": "0.5514345"
+       "output": "0.5514345",
+       "tool": "0"
       },
       "cost_total": "2.97003720",
       "output": 40847,
-      "requests": 60
+      "requests": 60,
+      "tool_calls": 0
      }
     },
     "name": "陈巍文"
@@ -1296,11 +1438,13 @@
       "cost": {
        "cache_hit": "1.24590720",
        "cache_miss": "0.3143250",
-       "output": "0.4744170"
+       "output": "0.4744170",
+       "tool": "0"
       },
       "cost_total": "2.03464920",
       "output": 35142,
-      "requests": 37
+      "requests": 37,
+      "tool_calls": 0
      }
     },
     "name": "陈巍文"
@@ -1316,11 +1460,13 @@
       "cost": {
        "cache_hit": "0.04122624",
        "cache_miss": "0.127314",
-       "output": "0.170416"
+       "output": "0.170416",
+       "tool": "0"
       },
       "cost_total": "0.33895624",
       "output": 21302,
-      "requests": 18
+      "requests": 18,
+      "tool_calls": 0
      },
      "deepseek-v4-pro": {
       "cache_hit": 618880,
@@ -1328,11 +1474,13 @@
       "cost": {
        "cache_hit": "0.1856640",
        "cache_miss": "2.694096",
-       "output": "0.188028"
+       "output": "0.188028",
+       "tool": "0"
       },
       "cost_total": "3.0677880",
       "output": 6964,
-      "requests": 3
+      "requests": 3,
+      "tool_calls": 0
      }
     },
     "name": "祁殷俏"
@@ -1346,11 +1494,13 @@
       "cost": {
        "cache_hit": "1.25735168",
        "cache_miss": "2.230931",
-       "output": "2.352836"
+       "output": "2.352836",
+       "tool": "0"
       },
       "cost_total": "5.84111868",
       "output": 319285,
-      "requests": 314
+      "requests": 314,
+      "tool_calls": 0
      },
      "deepseek-v4-pro": {
       "cache_hit": 11038976,
@@ -1358,11 +1508,13 @@
       "cost": {
        "cache_hit": "3.3116928",
        "cache_miss": "4.687047",
-       "output": "2.149065"
+       "output": "2.149065",
+       "tool": "0"
       },
       "cost_total": "10.1478048",
       "output": 79595,
-      "requests": 68
+      "requests": 68,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -1376,11 +1528,13 @@
       "cost": {
        "cache_hit": "1.76431616",
        "cache_miss": "2.494633",
-       "output": "2.609748"
+       "output": "2.609748",
+       "tool": "0"
       },
       "cost_total": "6.86869716",
       "output": 355506,
-      "requests": 321
+      "requests": 321,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -1394,11 +1548,13 @@
       "cost": {
        "cache_hit": "0",
        "cache_miss": "0.000191",
-       "output": "0.000752"
+       "output": "0.000752",
+       "tool": "0"
       },
       "cost_total": "0.000943",
       "output": 188,
-      "requests": 1
+      "requests": 1,
+      "tool_calls": 0
      }
     },
     "name": "email"
@@ -1414,11 +1570,13 @@
       "cost": {
        "cache_hit": "0.57192448",
        "cache_miss": "0.777478",
-       "output": "0.244484"
+       "output": "0.244484",
+       "tool": "0"
       },
       "cost_total": "1.59388648",
       "output": 41161,
-      "requests": 75
+      "requests": 75,
+      "tool_calls": 0
      }
     },
     "name": "高鹏程"
@@ -1432,11 +1590,13 @@
       "cost": {
        "cache_hit": "0.08074240",
        "cache_miss": "0.231034",
-       "output": "0.106896"
+       "output": "0.106896",
+       "tool": "0"
       },
       "cost_total": "0.41867240",
       "output": 13362,
-      "requests": 24
+      "requests": 24,
+      "tool_calls": 0
      },
      "deepseek-v4-pro": {
       "cache_hit": 337536,
@@ -1444,11 +1604,13 @@
       "cost": {
        "cache_hit": "0.1012608",
        "cache_miss": "2.608344",
-       "output": "0.166212"
+       "output": "0.166212",
+       "tool": "0"
       },
       "cost_total": "2.8758168",
       "output": 6156,
-      "requests": 2
+      "requests": 2,
+      "tool_calls": 0
      }
     },
     "name": "祁殷俏"
@@ -1462,11 +1624,13 @@
       "cost": {
        "cache_hit": "1.74278656",
        "cache_miss": "2.272790",
-       "output": "3.024432"
+       "output": "3.024432",
+       "tool": "0"
       },
       "cost_total": "7.04000856",
       "output": 378054,
-      "requests": 333
+      "requests": 333,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -1480,11 +1644,13 @@
       "cost": {
        "cache_hit": "1.82872064",
        "cache_miss": "0.523290",
-       "output": "1.425992"
+       "output": "1.425992",
+       "tool": "0"
       },
       "cost_total": "3.77800264",
       "output": 178249,
-      "requests": 104
+      "requests": 104,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -1500,11 +1666,13 @@
       "cost": {
        "cache_hit": "0.56430592",
        "cache_miss": "0.897446",
-       "output": "0.825920"
+       "output": "0.825920",
+       "tool": "0"
       },
       "cost_total": "2.28767192",
       "output": 103240,
-      "requests": 107
+      "requests": 107,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -1518,11 +1686,13 @@
       "cost": {
        "cache_hit": "2.26166528",
        "cache_miss": "2.241722",
-       "output": "1.468368"
+       "output": "1.468368",
+       "tool": "0"
       },
       "cost_total": "5.97175528",
       "output": 204212,
-      "requests": 185
+      "requests": 185,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -1538,11 +1708,13 @@
       "cost": {
        "cache_hit": "0.07641600",
        "cache_miss": "1.0436760",
-       "output": "0.3510000"
+       "output": "0.3510000",
+       "tool": "0"
       },
       "cost_total": "1.47109200",
       "output": 17339,
-      "requests": 18
+      "requests": 18,
+      "tool_calls": 0
      }
     },
     "name": "贺海晏"
@@ -1556,11 +1728,13 @@
       "cost": {
        "cache_hit": "0.21573632",
        "cache_miss": "0.217488",
-       "output": "0.525832"
+       "output": "0.525832",
+       "tool": "0"
       },
       "cost_total": "0.95905632",
       "output": 65729,
-      "requests": 63
+      "requests": 63,
+      "tool_calls": 0
      }
     },
     "name": "高鹏程"
@@ -1574,11 +1748,13 @@
       "cost": {
        "cache_hit": "0.05790720",
        "cache_miss": "0.239676",
-       "output": "0.053944"
+       "output": "0.053944",
+       "tool": "0"
       },
       "cost_total": "0.35152720",
       "output": 6743,
-      "requests": 14
+      "requests": 14,
+      "tool_calls": 0
      },
      "deepseek-v4-pro": {
       "cache_hit": 1017600,
@@ -1586,11 +1762,13 @@
       "cost": {
        "cache_hit": "0.15264000",
        "cache_miss": "1.2592395",
-       "output": "0.1340010"
+       "output": "0.1340010",
+       "tool": "0"
       },
       "cost_total": "1.54588050",
       "output": 9926,
-      "requests": 4
+      "requests": 4,
+      "tool_calls": 0
      }
     },
     "name": "祁殷俏"
@@ -1604,11 +1782,13 @@
       "cost": {
        "cache_hit": "0.74239488",
        "cache_miss": "0.873144",
-       "output": "0.989712"
+       "output": "0.989712",
+       "tool": "0"
       },
       "cost_total": "2.60525088",
       "output": 123714,
-      "requests": 154
+      "requests": 154,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -1622,11 +1802,13 @@
       "cost": {
        "cache_hit": "2.22945280",
        "cache_miss": "0.187105",
-       "output": "0.998464"
+       "output": "0.998464",
+       "tool": "0"
       },
       "cost_total": "3.41502180",
       "output": 149649,
-      "requests": 203
+      "requests": 203,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -1642,11 +1824,13 @@
       "cost": {
        "cache_hit": "0.52767744",
        "cache_miss": "0.713372",
-       "output": "0.786696"
+       "output": "0.786696",
+       "tool": "0"
       },
       "cost_total": "2.02774544",
       "output": 98337,
-      "requests": 119
+      "requests": 119,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -1660,11 +1844,13 @@
       "cost": {
        "cache_hit": "0.02403840",
        "cache_miss": "0.029870",
-       "output": "0.139096"
+       "output": "0.139096",
+       "tool": "0"
       },
       "cost_total": "0.19300440",
       "output": 17387,
-      "requests": 32
+      "requests": 32,
+      "tool_calls": 0
      }
     },
     "name": "金胜利"
@@ -1678,11 +1864,13 @@
       "cost": {
        "cache_hit": "1.38359040",
        "cache_miss": "0.675664",
-       "output": "2.503264"
+       "output": "2.503264",
+       "tool": "0"
       },
       "cost_total": "4.56251840",
       "output": 322882,
-      "requests": 209
+      "requests": 209,
+      "tool_calls": 0
      }
     },
     "name": "黄绵吉"
@@ -1698,11 +1886,13 @@
       "cost": {
        "cache_hit": "0.16788480",
        "cache_miss": "0.9694260",
-       "output": "0.5507595"
+       "output": "0.5507595",
+       "tool": "0"
       },
       "cost_total": "1.68807030",
       "output": 40797,
-      "requests": 23
+      "requests": 23,
+      "tool_calls": 0
      }
     },
     "name": "陈巍文"
@@ -1716,11 +1906,13 @@
       "cost": {
        "cache_hit": "0.78905344",
        "cache_miss": "0.692018",
-       "output": "0.817380"
+       "output": "0.817380",
+       "tool": "0"
       },
       "cost_total": "2.29845144",
       "output": 204345,
-      "requests": 301
+      "requests": 301,
+      "tool_calls": 0
      }
     },
     "name": "金胜利"
@@ -1734,11 +1926,13 @@
       "cost": {
        "cache_hit": "0.89238268",
        "cache_miss": "2.056424",
-       "output": "2.153240"
+       "output": "2.153240",
+       "tool": "0"
       },
       "cost_total": "5.10204668",
       "output": 538310,
-      "requests": 945
+      "requests": 945,
+      "tool_calls": 0
      }
     },
     "name": "黄绵吉"
@@ -1754,11 +1948,13 @@
       "cost": {
        "cache_hit": "4.74440960",
        "cache_miss": "1.568222",
-       "output": "3.413772"
+       "output": "3.413772",
+       "tool": "0"
       },
       "cost_total": "9.72640360",
       "output": 853443,
-      "requests": 1185
+      "requests": 1185,
+      "tool_calls": 0
      }
     },
     "name": "黄绵吉"
@@ -1774,11 +1970,13 @@
       "cost": {
        "cache_hit": "0.01536000",
        "cache_miss": "0.071472",
-       "output": "0.061976"
+       "output": "0.061976",
+       "tool": "0"
       },
       "cost_total": "0.14880800",
       "output": 7747,
-      "requests": 11
+      "requests": 11,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -1792,11 +1990,13 @@
       "cost": {
        "cache_hit": "0.01723392",
        "cache_miss": "0.049376",
-       "output": "0.028344"
+       "output": "0.028344",
+       "tool": "0"
       },
       "cost_total": "0.09495392",
       "output": 3543,
-      "requests": 1
+      "requests": 1,
+      "tool_calls": 0
      }
     },
     "name": "金哲慧"
@@ -1810,11 +2010,13 @@
       "cost": {
        "cache_hit": "0.17489920",
        "cache_miss": "0.116644",
-       "output": "0.626232"
+       "output": "0.626232",
+       "tool": "0"
       },
       "cost_total": "0.91777520",
       "output": 78279,
-      "requests": 40
+      "requests": 40,
+      "tool_calls": 0
      }
     },
     "name": "黄绵吉"
@@ -1830,11 +2032,13 @@
       "cost": {
        "cache_hit": "1.45000960",
        "cache_miss": "1.456572",
-       "output": "2.273560"
+       "output": "2.273560",
+       "tool": "0"
       },
       "cost_total": "5.18014160",
       "output": 284195,
-      "requests": 342
+      "requests": 342,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
@@ -1848,11 +2052,13 @@
       "cost": {
        "cache_hit": "0.49418240",
        "cache_miss": "0.077456",
-       "output": "0.204896"
+       "output": "0.204896",
+       "tool": "0"
       },
       "cost_total": "0.77653440",
       "output": 25612,
-      "requests": 40
+      "requests": 40,
+      "tool_calls": 0
      }
     },
     "name": "金胜利"
@@ -1868,11 +2074,13 @@
       "cost": {
        "cache_hit": "0.49235712",
        "cache_miss": "0.123226",
-       "output": "0.721152"
+       "output": "0.721152",
+       "tool": "0"
       },
       "cost_total": "1.33673512",
       "output": 108983,
-      "requests": 75
+      "requests": 75,
+      "tool_calls": 0
      }
     },
     "name": "金胜利"
@@ -1886,11 +2094,13 @@
       "cost": {
        "cache_hit": "0.00274176",
        "cache_miss": "0.052840",
-       "output": "0.127276"
+       "output": "0.127276",
+       "tool": "0"
       },
       "cost_total": "0.18285776",
       "output": 31819,
-      "requests": 15
+      "requests": 15,
+      "tool_calls": 0
      }
     },
     "name": "黄绵吉"
@@ -1906,11 +2116,13 @@
       "cost": {
        "cache_hit": "0.01634816",
        "cache_miss": "0.058300",
-       "output": "0.025084"
+       "output": "0.025084",
+       "tool": "0"
       },
       "cost_total": "0.09973216",
       "output": 6271,
-      "requests": 16
+      "requests": 16,
+      "tool_calls": 0
      }
     },
     "name": "沈曲"
@@ -1924,11 +2136,13 @@
       "cost": {
        "cache_hit": "1.69090560",
        "cache_miss": "1.791394",
-       "output": "1.479672"
+       "output": "1.479672",
+       "tool": "0"
       },
       "cost_total": "4.96197160",
       "output": 232623,
-      "requests": 377
+      "requests": 377,
+      "tool_calls": 0
      },
      "deepseek-v4-pro": {
       "cache_hit": 529280,
@@ -1936,18 +2150,96 @@
       "cost": {
        "cache_hit": "0.1587840",
        "cache_miss": "1.184661",
-       "output": "0.050112"
+       "output": "0.050112",
+       "tool": "0"
       },
       "cost_total": "1.3935570",
       "output": 1856,
-      "requests": 5
+      "requests": 5,
+      "tool_calls": 0
      }
     },
     "name": "朱钦辰"
    }
+  },
+  "2026-11-02": {
+   "sk-6d55d***********************5262": {
+    "masked": "sk-6d55d***********************5262",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 44329728,
+      "cache_miss": 309542,
+      "cost": {
+       "cache_hit": "1.77318912",
+       "cache_miss": "0.619084",
+       "output": "1.983392",
+       "tool": "0"
+      },
+      "cost_total": "4.37566512",
+      "output": 247924,
+      "requests": 329,
+      "tool_calls": 0
+     }
+    },
+    "name": "高鹏程"
+   },
+   "sk-87071***********************7263": {
+    "masked": "sk-87071***********************7263",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 657280,
+      "cache_miss": 328431,
+      "cost": {
+       "cache_hit": "0.1971840",
+       "cache_miss": "2.955879",
+       "output": "0.196695",
+       "tool": "0"
+      },
+      "cost_total": "3.3497580",
+      "output": 7285,
+      "requests": 3,
+      "tool_calls": 0
+     }
+    },
+    "name": "祁殷俏"
+   },
+   "sk-97420***********************c434": {
+    "masked": "sk-97420***********************c434",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 637312,
+      "cache_miss": 118865,
+      "cost": {
+       "cache_hit": "0.01274624",
+       "cache_miss": "0.118865",
+       "output": "0.109540",
+       "tool": "0"
+      },
+      "cost_total": "0.24115124",
+      "output": 27385,
+      "requests": 28,
+      "tool_calls": 0
+     },
+     "server-tool-search": {
+      "cache_hit": 0,
+      "cache_miss": 0,
+      "cost": {
+       "cache_hit": "0",
+       "cache_miss": "0",
+       "output": "0",
+       "tool": "0.070"
+      },
+      "cost_total": "0.070",
+      "output": 0,
+      "requests": 0,
+      "tool_calls": 14
+     }
+    },
+    "name": "金胜利"
+   }
   }
  },
- "data_version": "40b06c6a09cc",
+ "data_version": "6ce0c6443b3b",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -1982,9 +2274,10 @@
   "2026-10-26",
   "2026-10-27",
   "2026-10-29",
-  "2026-10-30"
+  "2026-10-30",
+  "2026-11-02"
  ],
- "default_date": "2026-10-30",
+ "default_date": "2026-11-02",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -2019,7 +2312,8 @@
   "amount-2026-10-26.csv",
   "amount-2026-10-27.csv",
   "amount-2026-10-29.csv",
-  "amount-2026-10-30.csv"
+  "amount-2026-10-30.csv",
+  "amount-2026-11-02.csv"
  ],
  "warnings": []
 }
