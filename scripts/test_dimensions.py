@@ -40,7 +40,11 @@ def check(cond, label, extra=""):
 
 # ---------------------------------------------------------------- reference aggregation
 def reference(dates: list[str] | None = None) -> dict:
-    """From-scratch aggregation of data/amount-*.csv, grouped by key -> model -> metrics."""
+    """From-scratch aggregation of data/amount-*.csv, grouped by key -> model/name -> metrics.
+
+    Grouped by `name` (falling back to `model`): the server-side search tool has an empty
+    `model` and only `name` = server-tool-search, and its `function_call` rows are billable.
+    """
     out: dict = {}
     for path in sorted(glob.glob(str(ROOT / "data" / "amount-*.csv"))):
         day = Path(path).name[len("amount-"):-len(".csv")]
@@ -49,13 +53,15 @@ def reference(dates: list[str] | None = None) -> dict:
         with open(path, encoding="utf-8-sig", newline="") as fh:
             rows = list(csv.DictReader(fh))
         for r in rows:
-            key, model, mtype = r["api_key"], r["model"], r["type"]
+            key, mtype = r["api_key"], r["type"]
+            group = (r.get("name") or "").strip() or (r.get("model") or "").strip()
             amount = int(r["amount"] or 0)
-            cost = float(r["price"]) * amount if r["price"].strip() else 0.0
+            cost = float(r["price"]) * amount if (r.get("price") or "").strip() else 0.0
             entry = out.setdefault(key, {"name": r["api_key_name"], "models": {}})
-            m = entry["models"].setdefault(model, {
-                "requests": 0, "cache_hit": 0, "cache_miss": 0, "output": 0,
-                "cost_total": 0.0, "cost": {"cache_hit": 0.0, "cache_miss": 0.0, "output": 0.0}})
+            m = entry["models"].setdefault(group, {
+                "requests": 0, "cache_hit": 0, "cache_miss": 0, "output": 0, "tool_calls": 0,
+                "cost_total": 0.0,
+                "cost": {"cache_hit": 0.0, "cache_miss": 0.0, "output": 0.0, "tool": 0.0}})
             if mtype == "request_count":
                 m["requests"] += amount
             elif mtype == "input_cache_hit_tokens":
@@ -64,6 +70,8 @@ def reference(dates: list[str] | None = None) -> dict:
                 m["cache_miss"] += amount; m["cost"]["cache_miss"] += cost; m["cost_total"] += cost
             elif mtype == "output_tokens":
                 m["output"] += amount; m["cost"]["output"] += cost; m["cost_total"] += cost
+            elif mtype == "function_call":
+                m["tool_calls"] += amount; m["cost"]["tool"] += cost; m["cost_total"] += cost
     return out
 
 

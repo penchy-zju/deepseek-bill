@@ -56,13 +56,16 @@ Target usage date  : 2026-09-22
 | 指标 | 含义 |
 | --- | --- |
 | 调用次数 | 接口 `request_count` 求和 |
+| 工具调用次数 | `function_call` 求和，即**服务端搜索工具**的调用次数（2026-11-02 起出现） |
 | 缓存命中 tokens | `input_cache_hit_tokens`，即命中上下文的输入量 |
 | 缓存未命中 tokens | `input_cache_miss_tokens`，即未命中、按全价计费的输入量 |
 | 输出 tokens | `output_tokens`，模型生成的量 |
-| 各项费用 / 费用合计 | 见下方「费用口径」 |
+| 各项费用 / 工具调用费用 / 费用合计 | 见下方「费用口径」 |
 | 输入缓存命中率 | `命中 ÷ (命中 + 未命中)`，反映上下文复用程度 |
 
-5 个指标卡片带**悬浮反馈**：鼠标移上去时轻微上浮 2px、投影加深、边框染上强调色、底色转为淡靛蓝（与表格行悬浮、分段按钮选中同一套配色），大号数字同时变成强调色。效果只在能真正悬浮的设备上启用（触屏点一下不会卡在悬浮态），并在系统开启「减少动态效果」时自动去掉位移、只保留配色反馈。
+**关于「工具调用」**：DeepSeek 的服务端搜索工具按调用次数计费（`price × amount`），在导出的 CSV 里表现为 `type = function_call`，而且**这类行的 `model` 列为空**，只有 `name = server-tool-search`。因此看板**按 `name` 列分组**（普通行的 `name` 与 `model` 相同；更早的、没有 `name` 列的历史文件回退到 `model`）。工具费用单独成列，同时计入各 Key 的小计与「费用合计」。
+
+6 个指标卡片带**悬浮反馈**：鼠标移上去时轻微上浮 2px、投影加深、边框染上强调色、底色转为淡靛蓝（与表格行悬浮、分段按钮选中同一套配色），大号数字同时变成强调色。效果只在能真正悬浮的设备上启用（触屏点一下不会卡在悬浮态），并在系统开启「减少动态效果」时自动去掉位移、只保留配色反馈。
 
 ### 查看维度：按天 / 累计至今
 
@@ -86,6 +89,7 @@ Target usage date  : 2026-09-22
 费用**不是**硬编码价目表算出来的，而是逐行用接口返回的 `price × amount` 累加：
 
 - 接口返回的每行都带 `price` 和 `amount`，`price` **已经包含平台的优惠时段折扣**——同一模型同一天会出现两档单价（例如 `deepseek-v4-pro` 输出全价 `0.000027`、优惠价 `0.0000135`），所以无需再手工打折
+- **工具调用同样按 `price × amount` 计费**（例如 `0.005 × 14 = ¥0.07`），和其它行一视同仁，不需要单独维护价目表
 - 金额用 Python `Decimal` 累加，避免浮点误差（数据里单行费用小到 `1.4e-7`）
 - 页面显示时自适应精度：小于 1 显示 6 位小数，小于 0.0001 显示 8 位并去掉末尾零，避免小费用被显示成 `¥0.0000`；金额一律用人民币符号 `¥`
 
@@ -296,15 +300,19 @@ node scripts/browser_check.js "/path/to/chrome" "$PWD/index.html"
 # 检查掩码 Key 是否被浏览器当成电话号码自动着色
 node scripts/check_phone.js "/path/to/chrome" "$PWD/index.html"
 
-# 检查 5 个指标卡片的悬浮效果：用 CDP 派发真实鼠标移动让 :hover 生效，再读计算样式。
+# 检查 6 个指标卡片的悬浮效果：用 CDP 派发真实鼠标移动让 :hover 生效，再读计算样式。
 # 覆盖：静止/悬浮/移出、不引起重排、触屏不粘住、prefers-reduced-motion 降级、亮暗两种主题，
 # 并输出 _kpi_hover_{light,dark}.png 供肉眼确认
 node scripts/check_kpi_hover.js "/path/to/chrome" "$PWD/index.html"
+
+# 检查两张表是否被卡片裁掉（加了列之后，「费用合计」曾整列被切在屏幕外）
+# 宽屏必须完全放得下；窄屏必须能横向滚动而不是被裁切
+node scripts/check_layout_fit.js "/path/to/chrome" "$PWD/index.html"
 ```
 
 ### 给这个仓库加新指标时
 
-1. `scripts/build_site.py` 里 `METRICS` 字典把接口的 `type` 映射到内部字段；新指标先加到这里
+1. `scripts/build_site.py` 里 `METRICS` 字典把接口的 `type` 映射到内部字段；新指标先加到这里（**同时**要加进 `empty_metrics()`，以及页面 JS 的 `mergeModels()` / `metricsOf()` / `combinedFor()` 和 `verify_site.js` 的独立复算——漏掉任何一处都会让校验失败或数字对不上）
 2. 聚合结果通过 `to_jsonable()` 落到 `site-data.json`，再内嵌进 `index.html`
 3. 页面 JS 里 `mergeModels()` / `metricsOf()` 负责跨 Key、跨模型合并（**不要**用 `Object.assign` 合并模型，同名模型会被覆盖而不是相加）
 4. 改完必须让 `check_workflow.py`、`verify_site.js` 和 `test_publish.py` 都通过——后两个会独立复算，能抓出聚合写错
@@ -321,4 +329,7 @@ node scripts/check_kpi_hover.js "/path/to/chrome" "$PWD/index.html"
 - **`git checkout -B` 不会重建索引**：切到 `gh-pages` 后如果索引里还留着 `master` 的树，`git add -A` 会把 `README`、`scripts/` 等“删除”一起提交上去 → 切分支后要 `git reset --hard`
 - **带 rowspan 的表格里，DOM 位置 ≠ 视觉列号**：续行的第 1 个子元素其实是第 2 列。用 `:first-child` / `:nth-child(n)` 决定对齐或列归属都会出错（曾导致「调用次数」列里同列数值一部分左对齐、一部分右对齐）→ 一律用语义类
 - **只靠单元格数量检查不足以发现“列错位”**：必须测量渲染后的实际几何边缘 → 用 `scripts/measure_columns.js`
+- **接口会在无预告的情况下新增行类型**：2026-11-02 出现了 `function_call`（服务端搜索工具），它的 `model` 列为空、只有 `name`，且**计费**。旧的聚合把它当未知类型跳过，于是页面总额比真实账单少了一笔 → 现在按 `name` 分组并支持该类型；再加新类型时按上面「给这个仓库加新指标时」的清单逐处修改
+- **加列会让表格溢出卡片**：从 10 列加到 12 列后，「费用合计」整列被切在屏幕外，而所有单测都通过（它们只数单元格）→ 用 `scripts/check_layout_fit.js` 检查 `scrollWidth vs clientWidth`；当前容器宽 1300px、单元格内边距 9px 刚好放得下两张表
+- **「某一行有 11 个单元格」并不总是错**：多模型 Key 的续行本来就没有跨行的 Key 单元格，所以是 11 而不是 12；按下标取值前必须先把缺的那一列补位，否则所有金额都会读错列
 

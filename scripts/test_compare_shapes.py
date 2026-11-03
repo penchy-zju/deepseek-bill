@@ -32,11 +32,12 @@ def check(cond, label, extra=""):
 
 
 # ---------------------------------------------------------------- shapes under test
-def metrics(requests, tokens=1000, cost="1.5"):
+def metrics(requests, tokens=1000, cost="1.5", tool_calls=0, tool_cost="0"):
     return {
         "requests": requests, "cache_hit": tokens, "cache_miss": tokens, "output": tokens,
+        "tool_calls": tool_calls,
         "cost_total": cost,
-        "cost": {"cache_hit": "0.1", "cache_miss": "0.2", "output": "1.2"},
+        "cost": {"cache_hit": "0.1", "cache_miss": "0.2", "output": "1.2", "tool": tool_cost},
     }
 
 
@@ -75,6 +76,16 @@ SHAPES = {
     "3 models on every key": {
         "A": key("A", {"a": metrics(1), "b": metrics(2), "c": metrics(3)}),
         "B": key("B", {"a": metrics(4), "b": metrics(5), "c": metrics(6)}),
+    },
+    # The 2026-11-02 shape: a key that also used the server-side search tool. Those rows have
+    # no model at all and are grouped by `name` = server-tool-search, so they render as their
+    # own row with 0 requests / N tool calls / tool cost only.
+    "key with a server-tool row": {
+        "A": key("A", {
+            "deepseek-flash": metrics(3, cost="1.0"),
+            "server-tool-search": metrics(0, tokens=0, cost="0.07",
+                                          tool_calls=14, tool_cost="0.07"),
+        }),
     },
 }
 
@@ -171,18 +182,18 @@ def main() -> int:
         check(len(widths) == expected_rows,
               f"[{label}] row count = {expected_rows} (header + {data_rows} model + "
               f"{subtotals} 小计 + grand)", f"got {len(widths)}")
-        check(all((w == 9 or w == 10) for w in widths),
-              f"[{label}] every row spans 9 or 10 visual columns", f"widths={widths}")
-        # A rowspan continuation row carries NO key cell, so it has exactly 9 <td>; every
-        # other body row has 10. That is the shape that keeps columns aligned.
+        check(all((w == 11 or w == 12) for w in widths),
+              f"[{label}] every row spans 11 or 12 visual columns", f"widths={widths}")
+        # A rowspan continuation row carries NO key cell, so it has exactly 11 <td>; every
+        # other body row has 12. That is the shape that keeps columns aligned.
         body = detail_rows[1:]
-        nines = [d for d in body if d["cells"] == 9]
-        tens = [d for d in body if d["cells"] == 10]
+        nines = [d for d in body if d["cells"] == 11]
+        tens = [d for d in body if d["cells"] == 12]
         check(len(nines) == carry_rows,
-              f"[{label}] exactly {carry_rows} continuation row(s) with 9 cells in the body",
+              f"[{label}] exactly {carry_rows} continuation row(s) with 11 cells in the body",
               f"cell counts={[d['cells'] for d in body]}")
         check(len(tens) == len(body) - carry_rows,
-              f"[{label}] all other body rows have 10 cells",
+              f"[{label}] all other body rows have 12 cells",
               f"cell counts={[d['cells'] for d in body]}")
         # Continuation rows must start at column 1 (column 0 carried by the key cell)
         check(all(d["first_col"] == 1 for d in nines),
@@ -239,6 +250,49 @@ def main() -> int:
     first_inserted = list(trap.values())[0]["name"]
     check(first_inserted == "cheap" and tcells[0][2] != "3",
           "the first rendered 小计 row is not the first-inserted key (the 2026-10-19 trap)")
+
+    # --- server-tool row: no model, grouped by name, tool cost in its own column ----
+    print("\n=== server-tool row (model empty, grouped by name) ===")
+
+    def tr_cells(row_html: str) -> list[str]:
+        """Cells of one <tr>, normalised to the full 12-column layout.
+
+        A rowspan continuation row carries no key cell, so it has 11 cells and its values sit
+        one column to the left. Padding the missing key cell keeps the indices meaningful —
+        assuming every row starts at column 0 is the trap that made this assertion fail.
+        """
+        cells = [re.sub(r"<[^>]*>", "", t).strip()
+                 for t in re.findall(r"<td[^>]*>([\s\S]*?)</td>", row_html)]
+        return [""] + cells if len(cells) == 11 else cells
+
+    def money(cell: str) -> float:
+        return float(cell.lstrip("\u00a5"))
+
+    tool_day = SHAPES["key with a server-tool row"]
+    tool_html = render_compare(tool_day, "compareTable")
+    all_trs = re.findall(r"<tr[^>]*>([\s\S]*?)</tr>", tool_html)
+    tool_row = next((tr_cells(r) for r in all_trs if "server-tool-search" in r), None)
+    check(tool_row is not None, "a row is rendered for the server-tool group")
+    if tool_row:
+        check(len(tool_row) == 12, "the tool row spans all 12 columns", str(len(tool_row)))
+        check(tool_row[1] == "server-tool-search", "the tool row is labelled by `name`", tool_row[1])
+        check(tool_row[2] == "0", "the tool row has 0 API requests", tool_row[2])
+        check(tool_row[6] == "14", "14 tool calls land under 工具调用次数", tool_row[6])
+        check(tool_row[3:6] == ["0", "0", "0"], "token columns are 0 for a tool-only row",
+              str(tool_row[3:6]))
+        check(abs(money(tool_row[10]) - 0.07) < 1e-9,
+              "the tool cost lands under 工具调用费用", repr(tool_row[10]))
+        check(abs(money(tool_row[11]) - 0.07) < 1e-9,
+              "the tool row's own 费用合计 is just its tool cost", repr(tool_row[11]))
+    subs = [tr_cells(r) for r in all_trs if "小计" in r]
+    check(len(subs) == 1, "the key with a tool row gets one 小计 row", str(len(subs)))
+    if subs:
+        s = subs[0]
+        check(len(s) == 12, "小计 row spans all 12 columns", str(len(s)))
+        check(s[2] == "3" and s[6] == "14",
+              "小计 sums requests and tool calls in separate columns", str(s[2:7]))
+        check(abs(money(s[11]) - 1.07) < 1e-9,
+              "小计 费用合计 includes the tool cost", repr(s[11]))
 
     if not chrome:
         print("\n(no chrome path given; skipping rendered-geometry check)")

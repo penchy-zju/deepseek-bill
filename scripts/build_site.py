@@ -29,18 +29,22 @@ OUT_JSON = "site-data.json"
 BEIJING = timezone(timedelta(hours=8))
 
 # type -> (metric key, cost key)
+# `function_call` is the server-side search tool (introduced 2026-11-02): it is billed like
+# any other line (price × amount) but is not a model, and its `model` column is empty.
 METRICS = {
     "request_count": ("requests", None),
     "input_cache_hit_tokens": ("cache_hit", "cache_hit"),
     "input_cache_miss_tokens": ("cache_miss", "cache_miss"),
     "output_tokens": ("output", "output"),
+    "function_call": ("tool_calls", "tool"),
 }
 
 
 def empty_metrics() -> dict:
-    return {"requests": 0, "cache_hit": 0, "cache_miss": 0, "output": 0,
+    return {"requests": 0, "cache_hit": 0, "cache_miss": 0, "output": 0, "tool_calls": 0,
             "cost_total": Decimal(0),
-            "cost": {"cache_hit": Decimal(0), "cache_miss": Decimal(0), "output": Decimal(0)}}
+            "cost": {"cache_hit": Decimal(0), "cache_miss": Decimal(0), "output": Decimal(0),
+                     "tool": Decimal(0)}}
 
 
 def date_from_path(path: str) -> str:
@@ -68,8 +72,12 @@ def parse_amount_csv(path: str, warnings: list[str]) -> dict:
             metric_key, cost_key = spec
             key = (row.get("api_key") or "").strip()
             model = (row.get("model") or "").strip()
-            if not key or not model:
-                warnings.append(f"{os.path.basename(path)}:{lineno}: empty api_key/model; skipped")
+            # Group by `name`: server-tool rows carry an empty `model` and only `name`
+            # ("server-tool-search"), while normal rows have name == model. Falling back to
+            # `model` keeps old files (or files without the column) working unchanged.
+            group = (row.get("name") or "").strip() or model
+            if not key or not group:
+                warnings.append(f"{os.path.basename(path)}:{lineno}: empty api_key/name; skipped")
                 continue
             try:
                 amount = int(Decimal((row.get("amount") or "0").strip() or "0"))
@@ -89,7 +97,7 @@ def parse_amount_csv(path: str, warnings: list[str]) -> dict:
                 "masked": key,
                 "models": defaultdict(empty_metrics),
             })
-            rec = entry["models"][model]
+            rec = entry["models"][group]
             rec[metric_key] += amount
             if cost_key is not None:
                 rec["cost"][cost_key] += cost
@@ -160,6 +168,7 @@ def to_jsonable(payload: dict) -> dict:
                     "cache_hit": rec["cache_hit"],
                     "cache_miss": rec["cache_miss"],
                     "output": rec["output"],
+                    "tool_calls": rec["tool_calls"],
                     "cost_total": str(rec["cost_total"]),
                     "cost": {k: str(v) for k, v in rec["cost"].items()},
                 }
@@ -194,7 +203,7 @@ TEMPLATE = r"""<!DOCTYPE html>
   * { box-sizing:border-box; }
   body { margin:0; padding:24px 16px 64px; background:var(--bg); color:var(--ink);
          font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; }
-  .wrap { max-width:1180px; margin:0 auto; }
+  .wrap { max-width:1300px; margin:0 auto; }
   header h1 { margin:0 0 4px; font-size:22px; letter-spacing:.2px; }
   .sub { color:var(--muted); font-size:13px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:12px;
@@ -234,8 +243,10 @@ TEMPLATE = r"""<!DOCTYPE html>
   .tablewrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
   table { border-collapse:collapse; width:100%; font-size:13.5px; font-variant-numeric:tabular-nums; }
   /* 表格只保留一种分割线：每个单元格的下边框（浅色，var(--line)）。
-     表头同样只用这条线，不做加粗；小计/合计行也不加粗边框，只用字重和淡底色区分。 */
-  th, td { padding:9px 11px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
+     表头同样只用这条线，不做加粗；小计/合计行也不加粗边框，只用字重和淡底色区分。
+     内边距 9px：加入「工具调用次数/工具调用费用」两列后，12 列的对比表要能放进容器
+     （13px 的字体+数字等宽，横向再多就挤了；窄屏仍由 .tablewrap 横向滚动兜底）。 */
+  th, td { padding:9px 9px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
   th { color:var(--muted); font-weight:600; font-size:12px; text-align:right; background:transparent; }
   /* 对齐规则（统一口径，避免同一列里有的左、有的右）：
      1) 默认所有单元格右对齐 —— 数字等宽，右缘自然对齐；
@@ -350,10 +361,12 @@ function mergeModels(groups) {
   const out = {};
   for (const models of groups) {
     for (const [m, rec] of Object.entries(models || {})) {
-      if (!out[m]) out[m] = {requests:0,cache_hit:0,cache_miss:0,output:0,cost_total:0,cost:{cache_hit:0,cache_miss:0,output:0}};
+      if (!out[m]) out[m] = {requests:0,cache_hit:0,cache_miss:0,output:0,tool_calls:0,cost_total:0,
+                             cost:{cache_hit:0,cache_miss:0,output:0,tool:0}};
       const t = out[m];
       t.requests += rec.requests; t.cache_hit += rec.cache_hit;
       t.cache_miss += rec.cache_miss; t.output += rec.output;
+      t.tool_calls += (rec.tool_calls || 0);
       t.cost_total = sum(t.cost_total, rec.cost_total);
       for (const k of Object.keys(t.cost)) t.cost[k] = sum(t.cost[k], rec.cost[k]);
     }
@@ -362,15 +375,23 @@ function mergeModels(groups) {
 }
 
 function metricsOf(models) {
-  const t = { requests:0, cache_hit:0, cache_miss:0, output:0, cost_total:0,
-              cost:{cache_hit:0, cache_miss:0, output:0} };
+  const t = { requests:0, cache_hit:0, cache_miss:0, output:0, tool_calls:0, cost_total:0,
+              cost:{cache_hit:0, cache_miss:0, output:0, tool:0} };
   for (const m of Object.values(models)) {
     t.requests += m.requests; t.cache_hit += m.cache_hit;
     t.cache_miss += m.cache_miss; t.output += m.output;
+    t.tool_calls += (m.tool_calls || 0);
     t.cost_total = sum(t.cost_total, m.cost_total);
     for (const k of Object.keys(t.cost)) t.cost[k] = sum(t.cost[k], m.cost[k]);
   }
   return t;
+}
+
+// 「模型数」只数真正的模型：服务端搜索工具（server-tool-search）只产生 function_call，
+// 没有请求也没有 token，不该被算成一个模型。
+function modelCount(models) {
+  return Object.values(models).filter(m =>
+    m.requests > 0 || (m.cache_hit + m.cache_miss + m.output) > 0).length;
 }
 
 // 纯函数：根据「某一天的数据」生成对比表的 HTML。
@@ -384,8 +405,8 @@ function buildCompareHtml(day) {
   if (!keys.length) return '';
   const head = `<thead><tr>
     <th>API Key</th><th class="grp model-cell">模型</th>
-    <th class="grp">调用次数</th><th>命中 tokens</th><th>未命中 tokens</th><th>输出 tokens</th>
-    <th class="grp">命中费用</th><th>未命中费用</th><th>输出费用</th><th class="grp">费用合计</th>
+    <th class="grp">调用次数</th><th>命中 tokens</th><th>未命中 tokens</th><th>输出 tokens</th><th>工具调用次数</th>
+    <th class="grp">命中费用</th><th>未命中费用</th><th>输出费用</th><th>工具调用费用</th><th class="grp">费用合计</th>
   </tr></thead>`;
   let body = '';
   const grand = metricsOf(mergeModels(keys.map(k => day[k.key].models)));
@@ -402,24 +423,24 @@ function buildCompareHtml(day) {
       }
       body += `<td class="grp model-cell">${m}</td>
         <td class="grp">${fmtInt(r.requests)}</td>
-        <td>${fmtInt(r.cache_hit)}</td><td>${fmtInt(r.cache_miss)}</td><td>${fmtInt(r.output)}</td>
-        <td class="grp">${fmtMoney(r.cost.cache_hit)}</td><td>${fmtMoney(r.cost.cache_miss)}</td><td>${fmtMoney(r.cost.output)}</td>
+        <td>${fmtInt(r.cache_hit)}</td><td>${fmtInt(r.cache_miss)}</td><td>${fmtInt(r.output)}</td><td>${fmtInt(r.tool_calls)}</td>
+        <td class="grp">${fmtMoney(r.cost.cache_hit)}</td><td>${fmtMoney(r.cost.cache_miss)}</td><td>${fmtMoney(r.cost.output)}</td><td>${fmtMoney(r.cost.tool)}</td>
         <td class="grp">${fmtMoney(r.cost_total)}</td></tr>`;
       if (i === modelNames.length - 1 && modelNames.length > 1) {
-        // 注意：这里必须为「模型」列留一个空单元格，否则小计行的 9 个单元格
-        // 会错位到 10 列的表头下（数值整体右移一列）。
+        // 注意：这里必须为「模型」列留一个空单元格，否则小计行的 11 个单元格
+        // 会错位到 12 列的表头下（数值整体右移一列）。
         body += `<tr class="total"><td class="subtotal-label">小计</td><td class="grp model-cell"></td>
           <td class="grp">${fmtInt(t.requests)}</td>
-          <td>${fmtInt(t.cache_hit)}</td><td>${fmtInt(t.cache_miss)}</td><td>${fmtInt(t.output)}</td>
-          <td class="grp">${fmtMoney(t.cost.cache_hit)}</td><td>${fmtMoney(t.cost.cache_miss)}</td><td>${fmtMoney(t.cost.output)}</td>
+          <td>${fmtInt(t.cache_hit)}</td><td>${fmtInt(t.cache_miss)}</td><td>${fmtInt(t.output)}</td><td>${fmtInt(t.tool_calls)}</td>
+          <td class="grp">${fmtMoney(t.cost.cache_hit)}</td><td>${fmtMoney(t.cost.cache_miss)}</td><td>${fmtMoney(t.cost.output)}</td><td>${fmtMoney(t.cost.tool)}</td>
           <td class="grp">${fmtMoney(t.cost_total)}</td></tr>`;
       }
     });
   }
   body += `<tr class="total grand"><td class="subtotal-label">全部合计</td><td class="grp model-cell">${keys.length} 个 Key</td>
     <td class="grp">${fmtInt(grand.requests)}</td>
-    <td>${fmtInt(grand.cache_hit)}</td><td>${fmtInt(grand.cache_miss)}</td><td>${fmtInt(grand.output)}</td>
-    <td class="grp">${fmtMoney(grand.cost.cache_hit)}</td><td>${fmtMoney(grand.cost.cache_miss)}</td><td>${fmtMoney(grand.cost.output)}</td>
+    <td>${fmtInt(grand.cache_hit)}</td><td>${fmtInt(grand.cache_miss)}</td><td>${fmtInt(grand.output)}</td><td>${fmtInt(grand.tool_calls)}</td>
+    <td class="grp">${fmtMoney(grand.cost.cache_hit)}</td><td>${fmtMoney(grand.cost.cache_miss)}</td><td>${fmtMoney(grand.cost.output)}</td><td>${fmtMoney(grand.cost.tool)}</td>
     <td class="grp">${fmtMoney(grand.cost_total)}</td></tr>`;
   return head + '<tbody>' + body + '</tbody>';
 }
@@ -437,11 +458,12 @@ function buildCompareHtml(day) {
         for (const m of Object.keys(src.models)) {
           const a = src.models[m];
           const b = dst.models[m] = dst.models[m] || {
-            requests: 0, cache_hit: 0, cache_miss: 0, output: 0, cost_total: 0,
-            cost: { cache_hit: 0, cache_miss: 0, output: 0 },
+            requests: 0, cache_hit: 0, cache_miss: 0, output: 0, tool_calls: 0, cost_total: 0,
+            cost: { cache_hit: 0, cache_miss: 0, output: 0, tool: 0 },
           };
           b.requests += a.requests; b.cache_hit += a.cache_hit;
           b.cache_miss += a.cache_miss; b.output += a.output;
+          b.tool_calls += (a.tool_calls || 0);
           b.cost_total = sum(b.cost_total, a.cost_total);
           for (const f of Object.keys(b.cost)) b.cost[f] = sum(b.cost[f], a.cost[f]);
         }
@@ -570,11 +592,12 @@ function init() {
     }
 
     const head = `<thead><tr>
-      <th>模型</th>
+      <th>模型 / 工具</th>
       <th class="grp">调用次数</th>
       <th class="grp">缓存命中 tokens</th><th>命中费用</th>
       <th class="grp">缓存未命中 tokens</th><th>未命中费用</th>
       <th class="grp">输出 tokens</th><th>输出费用</th>
+      <th class="grp">工具调用次数</th><th>工具调用费用</th>
       <th class="grp">费用合计</th>
     </tr></thead>`;
     const body = rows.map(([m, r]) => `<tr>
@@ -583,6 +606,7 @@ function init() {
       <td class="grp">${fmtInt(r.cache_hit)}</td><td>${fmtMoney(r.cost.cache_hit)}</td>
       <td class="grp">${fmtInt(r.cache_miss)}</td><td>${fmtMoney(r.cost.cache_miss)}</td>
       <td class="grp">${fmtInt(r.output)}</td><td>${fmtMoney(r.cost.output)}</td>
+      <td class="grp">${fmtInt(r.tool_calls)}</td><td>${fmtMoney(r.cost.tool)}</td>
       <td class="grp">${fmtMoney(r.cost_total)}</td>
     </tr>`).join('');
     const foot = `<tr class="total">
@@ -591,6 +615,7 @@ function init() {
       <td class="grp">${fmtInt(total.cache_hit)}</td><td>${fmtMoney(total.cost.cache_hit)}</td>
       <td class="grp">${fmtInt(total.cache_miss)}</td><td>${fmtMoney(total.cost.cache_miss)}</td>
       <td class="grp">${fmtInt(total.output)}</td><td>${fmtMoney(total.cost.output)}</td>
+      <td class="grp">${fmtInt(total.tool_calls)}</td><td>${fmtMoney(total.cost.tool)}</td>
       <td class="grp">${fmtMoney(total.cost_total)}</td>
     </tr>`;
     document.getElementById('detailTable').innerHTML = head + '<tbody>' + body + foot + '</tbody>';
@@ -598,9 +623,11 @@ function init() {
     const totTokens = total.cache_hit + total.cache_miss + total.output;
     const hitRate = (total.cache_hit + total.cache_miss) > 0
       ? (total.cache_hit / (total.cache_hit + total.cache_miss) * 100).toFixed(1) : '—';
+    const toolNote = total.tool_calls > 0
+      ? ` · 工具调用 ${fmtInt(total.tool_calls)} 次（${fmtMoney(total.cost.tool)}）` : '';
     document.getElementById('detailNote').innerHTML =
       `总 tokens ${fmtTokens(totTokens)}（输入 ${fmtTokens(total.cache_hit + total.cache_miss)} / 输出 ${fmtTokens(total.output)}）· ` +
-      `输入缓存命中率 ${hitRate}% · 费用合计 ${fmtMoney(total.cost_total)}。鼠标悬停任意数字可查看精确值。`;
+      `输入缓存命中率 ${hitRate}%${toolNote} · 费用合计 ${fmtMoney(total.cost_total)}。鼠标悬停任意数字可查看精确值。`;
   }
 
   function renderKpis() {
@@ -618,11 +645,14 @@ function init() {
     const days = datesFor(endDate).length;
     const kpis = [
       { label:'总费用', value: fmtMoney(t.cost_total),
-        hint: range + (mode === 'cumulative' ? ` · ${days} 天累计` : '') + (isAll ? ' · 全部 Key' : '') },
+        hint: range + (mode === 'cumulative' ? ` · ${days} 天累计` : '') + (isAll ? ' · 全部 Key' : '') +
+              (t.tool_calls > 0 ? ` · 含工具 ${fmtMoney(t.cost.tool)}` : '') },
       { label:'调用次数', value: fmtInt(t.requests), hint: '接口请求数' },
+      { label:'工具调用', value: fmtInt(t.tool_calls),
+        hint: t.tool_calls > 0 ? `${fmtMoney(t.cost.tool)} · 服务端搜索` : '本区间没有工具调用' },
       { label:'总 tokens', value: fmtTokens(totTokens), hint: fmtInt(totTokens) },
       { label:'输入缓存命中率', value: hitRate, hint: `命中 ${fmtTokens(t.cache_hit)} / 未命中 ${fmtTokens(t.cache_miss)}` },
-      { label:'模型数', value: Object.keys(models).length,
+      { label:'模型数', value: modelCount(models),
         hint: mode === 'cumulative' ? '区间内有调用的模型' : '当日有调用的模型' },
     ];
     document.getElementById('kpis').innerHTML = kpis.map(k =>
@@ -681,7 +711,7 @@ init();
 if (typeof __SITE_TEST__ !== 'undefined' && __SITE_TEST__) {
   __SITE_TEST__({
     SITE, metricsOf, mergeModels, fmtInt, fmtMoney, fmtTokens,
-    buildCompareHtml, combinedFor,
+    buildCompareHtml, combinedFor, modelCount,
     DAY_LIMIT: 7,
     keysFor: date => {
       const entry = SITE.data[date] || {};

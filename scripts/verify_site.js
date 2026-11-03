@@ -55,20 +55,24 @@ for (const file of files) {
   for (const line of lines.slice(1)) {
     const c = line.split(",");
     const key = c[idx.api_key];
-    const model = c[idx.model];
+    // Group by `name` (server-tool rows have an empty `model` and only `name`), falling back
+    // to `model` because the early files in this repo predate the `name` column.
+    const group = (idx.name !== undefined ? (c[idx.name] || "").trim() : "") ||
+                  (c[idx.model] || "").trim();
     const type = c[idx.type];
     const price = c[idx.price];
     const amount = Number(c[idx.amount]);
     const rec = (reference[date][key] = reference[date][key] || { models: {} }).models;
-    const m = (rec[model] = rec[model] || {
-      requests: 0, cache_hit: 0, cache_miss: 0, output: 0,
-      cost_total: 0, cost: { cache_hit: 0, cache_miss: 0, output: 0 },
+    const m = (rec[group] = rec[group] || {
+      requests: 0, cache_hit: 0, cache_miss: 0, output: 0, tool_calls: 0,
+      cost_total: 0, cost: { cache_hit: 0, cache_miss: 0, output: 0, tool: 0 },
     });
     const cost = price ? Number(price) * amount : 0;
     if (type === "request_count") m.requests += amount;
     else if (type === "input_cache_hit_tokens") { m.cache_hit += amount; m.cost.cache_hit += cost; m.cost_total += cost; }
     else if (type === "input_cache_miss_tokens") { m.cache_miss += amount; m.cost.cache_miss += cost; m.cost_total += cost; }
     else if (type === "output_tokens") { m.output += amount; m.cost.output += cost; m.cost_total += cost; }
+    else if (type === "function_call") { m.tool_calls += amount; m.cost.tool += cost; m.cost_total += cost; }
   }
 }
 console.log(`reference built from ${files.length} file(s): ${files.join(", ")}`);
@@ -183,13 +187,13 @@ for (const date of siteDates) {
       const a = reference[date][key].models[model];
       const b = pageKey.models[model];
       if (!b) { mismatch++; console.log(`    missing model ${model}`); continue; }
-      for (const f of ["requests", "cache_hit", "cache_miss", "output"]) {
+      for (const f of ["requests", "cache_hit", "cache_miss", "output", "tool_calls"]) {
         if (a[f] !== b[f]) { mismatch++; console.log(`    ${key}/${model}.${f}: ref=${a[f]} page=${b[f]}`); }
       }
       if (!approx(a.cost_total, b.cost_total)) {
         mismatch++; console.log(`    ${key}/${model}.cost_total: ref=${a.cost_total} page=${b.cost_total}`);
       }
-      for (const f of ["cache_hit", "cache_miss", "output"]) {
+      for (const f of ["cache_hit", "cache_miss", "output", "tool"]) {
         if (!approx(a.cost[f], b.cost[f])) {
           mismatch++; console.log(`    ${key}/${model}.cost.${f}: ref=${a.cost[f]} page=${b.cost[f]}`);
         }
@@ -287,8 +291,8 @@ const compare = __els.compareTable ? __els.compareTable._html : "";
 const detailCounts = rowCellCounts(detail);
 const compareCounts = rowCellCounts(compare);
 
-ok(detailCounts.length > 0 && detailCounts.every((n) => n === 9),
-   "detail table: every row has 9 cells", `counts = ${detailCounts.join(",")}`);
+ok(detailCounts.length > 0 && detailCounts.every((n) => n === 11),
+   "detail table: every row has 11 cells", `counts = ${detailCounts.join(",")}`);
 // Whether a rowspan continuation row exists depends on the DAY'S DATA: the API reflects
 // usage onto different key/model combinations, so on some days every key uses a single
 // model and no 小计 row is emitted at all. Assert shape-conditionally — hardcoding
@@ -304,12 +308,12 @@ ok(hasMultiModel ? subtotalCount === multiModelKeys.length : subtotalCount === 0
      ? `a 小计 row per multi-model key (${multiModelKeys.length} key(s))`
      : "no 小计 row when no key uses multiple models",
    `multi-model keys=${multiModelKeys.length} subtotal rows=${subtotalCount}`);
-ok(compareCounts.every((n) => n === 9 || n === 10),
-   "compare table: rows have 9 (rowspan continuation) or 10 cells",
+ok(compareCounts.every((n) => n === 11 || n === 12),
+   "compare table: rows have 11 (rowspan continuation) or 12 cells",
    `counts = ${compareCounts.join(",")}`);
 // A continuation row only exists for a multi-model key, so their counts must match.
-ok(compareCounts.filter((n) => n === 9).length === multiModelKeys.length,
-   "one rowspan continuation row (9 cells) per multi-model key",
+ok(compareCounts.filter((n) => n === 11).length === multiModelKeys.length,
+   "one rowspan continuation row (11 cells) per multi-model key",
    `counts = ${compareCounts.join(",")} multi=${multiModelKeys.length}`);
 ok(hasMultiModel
      ? compare.includes('<td class="grp model-cell"></td>')
@@ -341,7 +345,9 @@ function expectedSubtotalCells(key) {
   const t = metricsOf(SITE.data[date][key].models);
   return ["小计", "",
     fmtInt(t.requests), fmtInt(t.cache_hit), fmtInt(t.cache_miss), fmtInt(t.output),
+    fmtInt(t.tool_calls),
     fmtMoney(t.cost.cache_hit), fmtMoney(t.cost.cache_miss), fmtMoney(t.cost.output),
+    fmtMoney(t.cost.tool),
     fmtMoney(t.cost_total)];
 }
 
@@ -350,7 +356,7 @@ ok(subRows.every((c) => c[0] === "小计"), "every 小计 row starts with the �
 ok(subRows.every((c) => c[1] === ""), "every 小计 row keeps an empty 模型 cell",
    JSON.stringify(subRows.map((c) => c[1])));
 if (multiModelKeys.length) {
-  ok(subRows.every((c) => c.length === 10), "every 小计 row has 10 cells",
+  ok(subRows.every((c) => c.length === 12), "every 小计 row has 12 cells",
      JSON.stringify(subRows.map((c) => c.length)));
   const expected = multiModelKeys.map(expectedSubtotalCells);
   const norm = (rows) => rows.map((r) => JSON.stringify(r)).sort();
@@ -360,10 +366,11 @@ if (multiModelKeys.length) {
   // name the keys in cost-desc order (the order the table renders) to make failures legible
   const byCost = multiModelKeys.slice().sort((a, b) =>
     metricsOf(SITE.data[date][b].models).cost_total - metricsOf(SITE.data[date][a].models).cost_total);
+  const last = (r) => r[r.length - 1];
   ok(same,
      `each 小计 row equals the sums of its own key's models (${multiModelKeys.length} key(s))`,
-     same ? "" : `\n      rendered: ${subRows.map((r) => r[2] + "/" + r[9]).join("  ")}` +
-                 `\n      expected: ${expected.map((r) => r[2] + "/" + r[9]).join("  ")}` +
+     same ? "" : `\n      rendered: ${subRows.map((r) => r[2] + "/" + last(r)).join("  ")}` +
+                 `\n      expected: ${expected.map((r) => r[2] + "/" + last(r)).join("  ")}` +
                  `\n      keys by cost desc: ${byCost.map((k) => SITE.data[date][k].name).join(", ")}`);
 }
 
@@ -374,6 +381,9 @@ if (multiModelKeys.length) {
 console.log("\n== synthetic multi-model render (always exercised) ==");
 {
   const fakeKey = "sk-synthetic***0001";
+  // include a tool row (model == null, name == server-tool-search) to exercise the new
+  // columns in the synthetic render too
+  const withTools = (o) => ({ ...o, tool_calls: 0, cost: { ...o.cost, tool: "0" } });
   const fake = {
     dates: ["2026-01-01"], default_date: "2026-01-01", data_version: "test",
     warnings: [], source_files: [],
@@ -382,10 +392,13 @@ console.log("\n== synthetic multi-model render (always exercised) ==");
         [fakeKey]: {
           name: "Synthetic", masked: fakeKey,
           models: {
-            "model-a": { requests: 3, cache_hit: 10, cache_miss: 20, output: 30,
-                         cost_total: "0.1", cost: { cache_hit: "0.01", cache_miss: "0.02", output: "0.07" } },
-            "model-b": { requests: 5, cache_hit: 40, cache_miss: 50, output: 60,
-                         cost_total: "0.2", cost: { cache_hit: "0.02", cache_miss: "0.03", output: "0.15" } },
+            "model-a": withTools({ requests: 3, cache_hit: 10, cache_miss: 20, output: 30,
+                         cost_total: "0.1", cost: { cache_hit: "0.01", cache_miss: "0.02", output: "0.07" } }),
+            "model-b": withTools({ requests: 5, cache_hit: 40, cache_miss: 50, output: 60,
+                         cost_total: "0.2", cost: { cache_hit: "0.02", cache_miss: "0.03", output: "0.15" } }),
+            "server-tool-search": { requests: 0, cache_hit: 0, cache_miss: 0, output: 0,
+                         tool_calls: 14, cost_total: "0.07",
+                         cost: { cache_hit: "0", cache_miss: "0", output: "0", tool: "0.07" } },
           },
         },
       },
@@ -398,17 +411,18 @@ console.log("\n== synthetic multi-model render (always exercised) ==");
   ok(out.includes("小计"), "synthetic multi-model page renders a 小计 row");
   ok(out.includes('<td class="grp model-cell"></td>'),
      "synthetic 小计 row keeps the empty 模型 cell");
-  ok(counts.length > 0 && counts.every((n) => n === 9 || n === 10),
-     "synthetic table: every row has 9 or 10 cells", `counts = ${counts.join(",")}`);
-  ok(counts.filter((n) => n === 9).length === 1,
-     "synthetic table: exactly one rowspan continuation row", `counts = ${counts.join(",")}`);
+  ok(counts.length > 0 && counts.every((n) => n === 11 || n === 12),
+     "synthetic table: every row has 11 or 12 cells", `counts = ${counts.join(",")}`);
+  // 3 models in the synthetic key -> 2 rowspan continuation rows
+  ok(counts.filter((n) => n === 11).length === 2,
+     "synthetic table: one continuation row per extra model", `counts = ${counts.join(",")}`);
   const sub = (out.match(/<tr class="total">[\s\S]*?<\/tr>/g) || []).find((r) => r.includes("小计"));
   const sc = sub ? [...sub.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => m[1].replace(/<[^>]*>/g, "").trim()) : [];
-  // synthetic totals: 3+5 requests, 10+40 / 20+50 / 30+60 tokens, costs summed.
-  // Compare against the formatter itself rather than hardcoding its decimal policy.
-  ok(sc.length === 10 && sc[0] === "小计" && sc[1] === "" && sc[2] === "8" &&
-     sc[3] === "50" && sc[4] === "70" && sc[5] === "90" &&
-     sc[9] === fmtMoney(0.1 + 0.2),
+  // synthetic totals: 3+5 requests, 10+40 / 20+50 / 30+60 tokens, 14 tool calls;
+  // costs summed. Compare against the formatter itself for the money columns.
+  ok(sc.length === 12 && sc[0] === "小计" && sc[1] === "" && sc[2] === "8" &&
+     sc[3] === "50" && sc[4] === "70" && sc[5] === "90" && sc[6] === "14" &&
+     sc[11] === fmtMoney(0.1 + 0.2 + 0.07) && sc[10] === fmtMoney(0.07),
      "synthetic 小计 totals land in the right columns", JSON.stringify(sc));
 }
 

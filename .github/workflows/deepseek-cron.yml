@@ -279,6 +279,8 @@ jobs:
             scripts/test_verify_strength.py
           node --check scripts/verify_site.js
           node --check scripts/check_dimensions_ui.js
+          node --check scripts/check_kpi_hover.js
+          node --check scripts/check_layout_fit.js
           # 每个 run: 块的 shell 语法也检查（YAML 合法不代表里面的 shell 合法）
           python3 scripts/check_shell_blocks.py
           echo "static syntax checks: OK"
