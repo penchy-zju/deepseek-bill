@@ -2299,9 +2299,71 @@
     },
     "name": "朱钦辰"
    }
+  },
+  "2026-11-04": {
+   "sk-87071***********************7263": {
+    "masked": "sk-87071***********************7263",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 83552896,
+      "cache_miss": 941136,
+      "cost": {
+       "cache_hit": "3.34211584",
+       "cache_miss": "1.882272",
+       "output": "2.462800",
+       "tool": "0"
+      },
+      "cost_total": "7.68718784",
+      "output": 307850,
+      "requests": 436,
+      "tool_calls": 0
+     }
+    },
+    "name": "祁殷俏"
+   },
+   "sk-930b8***********************7607": {
+    "masked": "sk-930b8***********************7607",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 28925696,
+      "cache_miss": 687001,
+      "cost": {
+       "cache_hit": "1.09577472",
+       "cache_miss": "1.178219",
+       "output": "1.115960",
+       "tool": "0"
+      },
+      "cost_total": "3.38995372",
+      "output": 143683,
+      "requests": 273,
+      "tool_calls": 0
+     }
+    },
+    "name": "朱钦辰"
+   },
+   "sk-9c064***********************d8c9": {
+    "masked": "sk-9c064***********************d8c9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 132965248,
+      "cache_miss": 1208360,
+      "cost": {
+       "cache_hit": "4.69384960",
+       "cache_miss": "2.274398",
+       "output": "1.702332",
+       "tool": "0"
+      },
+      "cost_total": "8.67057960",
+      "output": 233441,
+      "requests": 270,
+      "tool_calls": 0
+     }
+    },
+    "name": "金哲慧"
+   }
   }
  },
- "data_version": "ffa36a09a468",
+ "data_version": "77b5b15274fa",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -2338,9 +2400,10 @@
   "2026-10-29",
   "2026-10-30",
   "2026-11-02",
-  "2026-11-03"
+  "2026-11-03",
+  "2026-11-04"
  ],
- "default_date": "2026-11-03",
+ "default_date": "2026-11-04",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -2377,7 +2440,8 @@
   "amount-2026-10-29.csv",
   "amount-2026-10-30.csv",
   "amount-2026-11-02.csv",
-  "amount-2026-11-03.csv"
+  "amount-2026-11-03.csv",
+  "amount-2026-11-04.csv"
  ],
  "warnings": []
 }
