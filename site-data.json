@@ -2361,9 +2361,159 @@
     },
     "name": "金哲慧"
    }
+  },
+  "2026-11-05": {
+   "sk-4589b***********************6263": {
+    "masked": "sk-4589b***********************6263",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 4625024,
+      "cache_miss": 72363,
+      "cost": {
+       "cache_hit": "1.3875072",
+       "cache_miss": "0.651267",
+       "output": "1.635363",
+       "tool": "0"
+      },
+      "cost_total": "3.6741372",
+      "output": 60569,
+      "requests": 60,
+      "tool_calls": 0
+     }
+    },
+    "name": "俞佳杰"
+   },
+   "sk-6d55d***********************5262": {
+    "masked": "sk-6d55d***********************5262",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 137856,
+      "cache_miss": 16250,
+      "cost": {
+       "cache_hit": "0.00275712",
+       "cache_miss": "0.016250",
+       "output": "0.027312",
+       "tool": "0"
+      },
+      "cost_total": "0.04631912",
+      "output": 6828,
+      "requests": 11,
+      "tool_calls": 0
+     }
+    },
+    "name": "高鹏程"
+   },
+   "sk-87071***********************7263": {
+    "masked": "sk-87071***********************7263",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 24191360,
+      "cache_miss": 523644,
+      "cost": {
+       "cache_hit": "0.96765440",
+       "cache_miss": "1.047288",
+       "output": "0.965768",
+       "tool": "0"
+      },
+      "cost_total": "2.98071040",
+      "output": 120721,
+      "requests": 121,
+      "tool_calls": 0
+     }
+    },
+    "name": "祁殷俏"
+   },
+   "sk-97420***********************c434": {
+    "masked": "sk-97420***********************c434",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 10426496,
+      "cache_miss": 377620,
+      "cost": {
+       "cache_hit": "0.20852992",
+       "cache_miss": "0.377620",
+       "output": "0.616236",
+       "tool": "0"
+      },
+      "cost_total": "1.20238592",
+      "output": 154059,
+      "requests": 145,
+      "tool_calls": 0
+     },
+     "server-tool-search": {
+      "cache_hit": 0,
+      "cache_miss": 0,
+      "cost": {
+       "cache_hit": "0",
+       "cache_miss": "0",
+       "output": "0",
+       "tool": "0.215"
+      },
+      "cost_total": "0.215",
+      "output": 0,
+      "requests": 0,
+      "tool_calls": 43
+     }
+    },
+    "name": "金胜利"
+   },
+   "sk-9c064***********************d8c9": {
+    "masked": "sk-9c064***********************d8c9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 78924800,
+      "cache_miss": 556726,
+      "cost": {
+       "cache_hit": "3.15699200",
+       "cache_miss": "1.113452",
+       "output": "2.094800",
+       "tool": "0"
+      },
+      "cost_total": "6.36524400",
+      "output": 261850,
+      "requests": 326,
+      "tool_calls": 0
+     }
+    },
+    "name": "金哲慧"
+   },
+   "sk-ed61d***********************0d75": {
+    "masked": "sk-ed61d***********************0d75",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 48354688,
+      "cache_miss": 938803,
+      "cost": {
+       "cache_hit": "1.39521280",
+       "cache_miss": "1.448003",
+       "output": "2.920272",
+       "tool": "0"
+      },
+      "cost_total": "5.76348780",
+      "output": 516224,
+      "requests": 655,
+      "tool_calls": 0
+     },
+     "server-tool-search": {
+      "cache_hit": 0,
+      "cache_miss": 0,
+      "cost": {
+       "cache_hit": "0",
+       "cache_miss": "0",
+       "output": "0",
+       "tool": "0.105"
+      },
+      "cost_total": "0.105",
+      "output": 0,
+      "requests": 0,
+      "tool_calls": 21
+     }
+    },
+    "name": "黄绵吉"
+   }
   }
  },
- "data_version": "77b5b15274fa",
+ "data_version": "7c9a0c576b7e",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -2401,9 +2551,10 @@
   "2026-10-30",
   "2026-11-02",
   "2026-11-03",
-  "2026-11-04"
+  "2026-11-04",
+  "2026-11-05"
  ],
- "default_date": "2026-11-04",
+ "default_date": "2026-11-05",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -2441,7 +2592,8 @@
   "amount-2026-10-30.csv",
   "amount-2026-11-02.csv",
   "amount-2026-11-03.csv",
-  "amount-2026-11-04.csv"
+  "amount-2026-11-04.csv",
+  "amount-2026-11-05.csv"
  ],
  "warnings": []
 }
