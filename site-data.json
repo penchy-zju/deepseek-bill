@@ -2627,9 +2627,51 @@
     },
     "name": "金哲慧"
    }
+  },
+  "2026-11-09": {
+   "sk-4589b***********************6263": {
+    "masked": "sk-4589b***********************6263",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 764800,
+      "cache_miss": 36523,
+      "cost": {
+       "cache_hit": "0.2294400",
+       "cache_miss": "0.328707",
+       "output": "0.364662",
+       "tool": "0"
+      },
+      "cost_total": "0.9228090",
+      "output": 13506,
+      "requests": 19,
+      "tool_calls": 0
+     }
+    },
+    "name": "俞佳杰"
+   },
+   "sk-9c064***********************d8c9": {
+    "masked": "sk-9c064***********************d8c9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 68895616,
+      "cache_miss": 321868,
+      "cost": {
+       "cache_hit": "2.61583872",
+       "cache_miss": "0.639554",
+       "output": "0.832308",
+       "tool": "0"
+      },
+      "cost_total": "4.08770072",
+      "output": 108523,
+      "requests": 157,
+      "tool_calls": 0
+     }
+    },
+    "name": "金哲慧"
+   }
   }
  },
- "data_version": "30428743cc31",
+ "data_version": "34d78529e6f4",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -2669,9 +2711,10 @@
   "2026-11-03",
   "2026-11-04",
   "2026-11-05",
-  "2026-11-06"
+  "2026-11-06",
+  "2026-11-09"
  ],
- "default_date": "2026-11-06",
+ "default_date": "2026-11-09",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -2711,7 +2754,8 @@
   "amount-2026-11-03.csv",
   "amount-2026-11-04.csv",
   "amount-2026-11-05.csv",
-  "amount-2026-11-06.csv"
+  "amount-2026-11-06.csv",
+  "amount-2026-11-09.csv"
  ],
  "warnings": []
 }
