@@ -2725,9 +2725,105 @@
     },
     "name": "金哲慧"
    }
+  },
+  "2026-11-11": {
+   "sk-29aa1***********************9ea3": {
+    "masked": "sk-29aa1***********************9ea3",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 153088,
+      "cache_miss": 105619,
+      "cost": {
+       "cache_hit": "0.0459264",
+       "cache_miss": "0.950571",
+       "output": "0.207711",
+       "tool": "0"
+      },
+      "cost_total": "1.2042084",
+      "output": 7693,
+      "requests": 8,
+      "tool_calls": 0
+     }
+    },
+    "name": "贺海晏"
+   },
+   "sk-6d55d***********************5262": {
+    "masked": "sk-6d55d***********************5262",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 282195584,
+      "cache_miss": 1148732,
+      "cost": {
+       "cache_hit": "9.92551168",
+       "cache_miss": "2.205945",
+       "output": "2.176544",
+       "tool": "0"
+      },
+      "cost_total": "14.30800068",
+      "output": 312852,
+      "requests": 647,
+      "tool_calls": 0
+     },
+     "server-tool-search": {
+      "cache_hit": 0,
+      "cache_miss": 0,
+      "cost": {
+       "cache_hit": "0",
+       "cache_miss": "0",
+       "output": "0",
+       "tool": "0.010"
+      },
+      "cost_total": "0.010",
+      "output": 0,
+      "requests": 0,
+      "tool_calls": 2
+     }
+    },
+    "name": "高鹏程"
+   },
+   "sk-930b8***********************7607": {
+    "masked": "sk-930b8***********************7607",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 28206464,
+      "cache_miss": 532352,
+      "cost": {
+       "cache_hit": "1.12825856",
+       "cache_miss": "1.064704",
+       "output": "1.535512",
+       "tool": "0"
+      },
+      "cost_total": "3.72847456",
+      "output": 191939,
+      "requests": 246,
+      "tool_calls": 0
+     }
+    },
+    "name": "朱钦辰"
+   },
+   "sk-9c064***********************d8c9": {
+    "masked": "sk-9c064***********************d8c9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 118703104,
+      "cache_miss": 338975,
+      "cost": {
+       "cache_hit": "4.74812416",
+       "cache_miss": "0.677950",
+       "output": "1.892328",
+       "tool": "0"
+      },
+      "cost_total": "7.31840216",
+      "output": 236541,
+      "requests": 229,
+      "tool_calls": 0
+     }
+    },
+    "name": "金哲慧"
+   }
   }
  },
- "data_version": "9da8f6e80a40",
+ "data_version": "32f1cffaf25f",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -2769,9 +2865,10 @@
   "2026-11-05",
   "2026-11-06",
   "2026-11-09",
-  "2026-11-10"
+  "2026-11-10",
+  "2026-11-11"
  ],
- "default_date": "2026-11-10",
+ "default_date": "2026-11-11",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -2813,7 +2910,8 @@
   "amount-2026-11-05.csv",
   "amount-2026-11-06.csv",
   "amount-2026-11-09.csv",
-  "amount-2026-11-10.csv"
+  "amount-2026-11-10.csv",
+  "amount-2026-11-11.csv"
  ],
  "warnings": []
 }
