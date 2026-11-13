@@ -2951,9 +2951,131 @@
     },
     "name": "高鹏程"
    }
+  },
+  "2026-11-13": {
+   "sk-5946a***********************9c4b": {
+    "masked": "sk-5946a***********************9c4b",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 1156352,
+      "cache_miss": 55810,
+      "cost": {
+       "cache_hit": "0.02312704",
+       "cache_miss": "0.055810",
+       "output": "0.022552",
+       "tool": "0"
+      },
+      "cost_total": "0.10148904",
+      "output": 5638,
+      "requests": 23,
+      "tool_calls": 0
+     }
+    },
+    "name": "沈曲"
+   },
+   "sk-68572***********************bfb9": {
+    "masked": "sk-68572***********************bfb9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 232002048,
+      "cache_miss": 3102924,
+      "cost": {
+       "cache_hit": "5.48783872",
+       "cache_miss": "3.839114",
+       "output": "2.533228",
+       "tool": "0"
+      },
+      "cost_total": "11.86018072",
+      "output": 486091,
+      "requests": 551,
+      "tool_calls": 0
+     }
+    },
+    "name": "赵杭"
+   },
+   "sk-6d55d***********************5262": {
+    "masked": "sk-6d55d***********************5262",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 225404800,
+      "cache_miss": 1479190,
+      "cost": {
+       "cache_hit": "5.62236928",
+       "cache_miss": "1.542136",
+       "output": "1.507412",
+       "tool": "0"
+      },
+      "cost_total": "8.67191728",
+      "output": 313867,
+      "requests": 500,
+      "tool_calls": 0
+     }
+    },
+    "name": "高鹏程"
+   },
+   "sk-87071***********************7263": {
+    "masked": "sk-87071***********************7263",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 6581504,
+      "cache_miss": 280848,
+      "cost": {
+       "cache_hit": "0.26326016",
+       "cache_miss": "0.561696",
+       "output": "0.179448",
+       "tool": "0"
+      },
+      "cost_total": "1.00440416",
+      "output": 22431,
+      "requests": 23,
+      "tool_calls": 0
+     }
+    },
+    "name": "祁殷俏"
+   },
+   "sk-930b8***********************7607": {
+    "masked": "sk-930b8***********************7607",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 97408,
+      "cache_miss": 54434,
+      "cost": {
+       "cache_hit": "0.00194816",
+       "cache_miss": "0.054434",
+       "output": "0.010540",
+       "tool": "0"
+      },
+      "cost_total": "0.06692216",
+      "output": 2635,
+      "requests": 4,
+      "tool_calls": 0
+     }
+    },
+    "name": "朱钦辰"
+   },
+   "sk-9c064***********************d8c9": {
+    "masked": "sk-9c064***********************d8c9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 77528064,
+      "cache_miss": 274149,
+      "cost": {
+       "cache_hit": "3.10112256",
+       "cache_miss": "0.548298",
+       "output": "1.245336",
+       "tool": "0"
+      },
+      "cost_total": "4.89475656",
+      "output": 155667,
+      "requests": 238,
+      "tool_calls": 0
+     }
+    },
+    "name": "金哲慧"
+   }
   }
  },
- "data_version": "c28f78e5da03",
+ "data_version": "8da15b9ae89a",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -2997,9 +3119,10 @@
   "2026-11-09",
   "2026-11-10",
   "2026-11-11",
-  "2026-11-12"
+  "2026-11-12",
+  "2026-11-13"
  ],
- "default_date": "2026-11-12",
+ "default_date": "2026-11-13",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -3043,7 +3166,8 @@
   "amount-2026-11-09.csv",
   "amount-2026-11-10.csv",
   "amount-2026-11-11.csv",
-  "amount-2026-11-12.csv"
+  "amount-2026-11-12.csv",
+  "amount-2026-11-13.csv"
  ],
  "warnings": []
 }
