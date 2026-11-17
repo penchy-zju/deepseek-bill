@@ -3117,9 +3117,111 @@
     },
     "name": "高鹏程"
    }
+  },
+  "2026-11-16": {
+   "sk-63b33***********************c1e8": {
+    "masked": "sk-63b33***********************c1e8",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 4348288,
+      "cache_miss": 444439,
+      "cost": {
+       "cache_hit": "0.65224320",
+       "cache_miss": "1.9999755",
+       "output": "0.3600720",
+       "tool": "0"
+      },
+      "cost_total": "3.01229070",
+      "output": 26672,
+      "requests": 16,
+      "tool_calls": 0
+     }
+    },
+    "name": "陈巍文"
+   },
+   "sk-68572***********************bfb9": {
+    "masked": "sk-68572***********************bfb9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 393500032,
+      "cache_miss": 2044009,
+      "cost": {
+       "cache_hit": "12.44766464",
+       "cache_miss": "3.944951",
+       "output": "4.736020",
+       "tool": "0"
+      },
+      "cost_total": "21.12863564",
+      "output": 684385,
+      "requests": 1074,
+      "tool_calls": 0
+     }
+    },
+    "name": "赵杭"
+   },
+   "sk-87071***********************7263": {
+    "masked": "sk-87071***********************7263",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 46253184,
+      "cache_miss": 510792,
+      "cost": {
+       "cache_hit": "1.59329024",
+       "cache_miss": "0.987472",
+       "output": "0.793940",
+       "tool": "0"
+      },
+      "cost_total": "3.37470224",
+      "output": 113617,
+      "requests": 115,
+      "tool_calls": 0
+     }
+    },
+    "name": "祁殷俏"
+   },
+   "sk-97420***********************c434": {
+    "masked": "sk-97420***********************c434",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 20166528,
+      "cache_miss": 458387,
+      "cost": {
+       "cache_hit": "0.40333056",
+       "cache_miss": "0.458387",
+       "output": "0.162548",
+       "tool": "0"
+      },
+      "cost_total": "1.02426556",
+      "output": 40637,
+      "requests": 45,
+      "tool_calls": 0
+     }
+    },
+    "name": "金胜利"
+   },
+   "sk-9c064***********************d8c9": {
+    "masked": "sk-9c064***********************d8c9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 98304768,
+      "cache_miss": 336496,
+      "cost": {
+       "cache_hit": "3.64604928",
+       "cache_miss": "0.657233",
+       "output": "0.921348",
+       "tool": "0"
+      },
+      "cost_total": "5.22463028",
+      "output": 136248,
+      "requests": 233,
+      "tool_calls": 0
+     }
+    },
+    "name": "金哲慧"
+   }
   }
  },
- "data_version": "440a122f410d",
+ "data_version": "bf0974636a55",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -3166,9 +3268,10 @@
   "2026-11-12",
   "2026-11-13",
   "2026-11-14",
-  "2026-11-15"
+  "2026-11-15",
+  "2026-11-16"
  ],
- "default_date": "2026-11-15",
+ "default_date": "2026-11-16",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -3215,7 +3318,8 @@
   "amount-2026-11-12.csv",
   "amount-2026-11-13.csv",
   "amount-2026-11-14.csv",
-  "amount-2026-11-15.csv"
+  "amount-2026-11-15.csv",
+  "amount-2026-11-16.csv"
  ],
  "warnings": []
 }
