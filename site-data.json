@@ -3587,9 +3587,145 @@
     },
     "name": "丁莞尔"
    }
+  },
+  "2026-11-20": {
+   "sk-5946a***********************9c4b": {
+    "masked": "sk-5946a***********************9c4b",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 1732864,
+      "cache_miss": 58630,
+      "cost": {
+       "cache_hit": "0.03465728",
+       "cache_miss": "0.058630",
+       "output": "0.028724",
+       "tool": "0"
+      },
+      "cost_total": "0.12201128",
+      "output": 7181,
+      "requests": 33,
+      "tool_calls": 0
+     }
+    },
+    "name": "沈曲"
+   },
+   "sk-68572***********************bfb9": {
+    "masked": "sk-68572***********************bfb9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 246883072,
+      "cache_miss": 1618146,
+      "cost": {
+       "cache_hit": "8.62211840",
+       "cache_miss": "2.908427",
+       "output": "4.531140",
+       "tool": "0"
+      },
+      "cost_total": "16.06168540",
+      "output": 636373,
+      "requests": 1364,
+      "tool_calls": 0
+     },
+     "server-tool-search": {
+      "cache_hit": 0,
+      "cache_miss": 0,
+      "cost": {
+       "cache_hit": "0",
+       "cache_miss": "0",
+       "output": "0",
+       "tool": "0"
+      },
+      "cost_total": "0",
+      "output": 0,
+      "requests": 0,
+      "tool_calls": 2
+     }
+    },
+    "name": "赵杭"
+   },
+   "sk-6d55d***********************5262": {
+    "masked": "sk-6d55d***********************5262",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 71820928,
+      "cache_miss": 182268,
+      "cost": {
+       "cache_hit": "2.77923584",
+       "cache_miss": "0.351971",
+       "output": "2.534672",
+       "tool": "0"
+      },
+      "cost_total": "5.66587884",
+      "output": 322994,
+      "requests": 326,
+      "tool_calls": 0
+     }
+    },
+    "name": "高鹏程"
+   },
+   "sk-87071***********************7263": {
+    "masked": "sk-87071***********************7263",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 15203328,
+      "cache_miss": 26219,
+      "cost": {
+       "cache_hit": "0.55934208",
+       "cache_miss": "0.047542",
+       "output": "0.174304",
+       "tool": "0"
+      },
+      "cost_total": "0.78118808",
+      "output": 23886,
+      "requests": 47,
+      "tool_calls": 0
+     }
+    },
+    "name": "祁殷俏"
+   },
+   "sk-ed61d***********************0d75": {
+    "masked": "sk-ed61d***********************0d75",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 2044032,
+      "cache_miss": 57474,
+      "cost": {
+       "cache_hit": "0.08176128",
+       "cache_miss": "0.114948",
+       "output": "0.604000",
+       "tool": "0"
+      },
+      "cost_total": "0.80070928",
+      "output": 75500,
+      "requests": 79,
+      "tool_calls": 0
+     }
+    },
+    "name": "黄绵吉"
+   },
+   "sk-ff63d***********************6dea": {
+    "masked": "sk-ff63d***********************6dea",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 4479616,
+      "cache_miss": 184297,
+      "cost": {
+       "cache_hit": "0.17918464",
+       "cache_miss": "0.368594",
+       "output": "0.504952",
+       "tool": "0"
+      },
+      "cost_total": "1.05273064",
+      "output": 63119,
+      "requests": 86,
+      "tool_calls": 0
+     }
+    },
+    "name": "丁莞尔"
+   }
   }
  },
- "data_version": "2a164dd73cf4",
+ "data_version": "1c58f4c2bbc2",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -3640,9 +3776,10 @@
   "2026-11-16",
   "2026-11-17",
   "2026-11-18",
-  "2026-11-19"
+  "2026-11-19",
+  "2026-11-20"
  ],
- "default_date": "2026-11-19",
+ "default_date": "2026-11-20",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -3693,7 +3830,8 @@
   "amount-2026-11-16.csv",
   "amount-2026-11-17.csv",
   "amount-2026-11-18.csv",
-  "amount-2026-11-19.csv"
+  "amount-2026-11-19.csv",
+  "amount-2026-11-20.csv"
  ],
  "warnings": []
 }
