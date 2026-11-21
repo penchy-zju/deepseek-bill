@@ -3723,9 +3723,31 @@
     },
     "name": "丁莞尔"
    }
+  },
+  "2026-11-21": {
+   "sk-68572***********************bfb9": {
+    "masked": "sk-68572***********************bfb9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 27985792,
+      "cache_miss": 186302,
+      "cost": {
+       "cache_hit": "0.55971584",
+       "cache_miss": "0.186302",
+       "output": "0.201676",
+       "tool": "0"
+      },
+      "cost_total": "0.94769384",
+      "output": 50419,
+      "requests": 145,
+      "tool_calls": 0
+     }
+    },
+    "name": "赵杭"
+   }
   }
  },
- "data_version": "1c58f4c2bbc2",
+ "data_version": "f82501f02777",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -3777,9 +3799,10 @@
   "2026-11-17",
   "2026-11-18",
   "2026-11-19",
-  "2026-11-20"
+  "2026-11-20",
+  "2026-11-21"
  ],
- "default_date": "2026-11-20",
+ "default_date": "2026-11-21",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -3831,7 +3854,8 @@
   "amount-2026-11-17.csv",
   "amount-2026-11-18.csv",
   "amount-2026-11-19.csv",
-  "amount-2026-11-20.csv"
+  "amount-2026-11-20.csv",
+  "amount-2026-11-21.csv"
  ],
  "warnings": []
 }
