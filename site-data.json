@@ -3849,9 +3849,119 @@
     },
     "name": "金胜利"
    }
+  },
+  "2026-11-24": {
+   "sk-68572***********************bfb9": {
+    "masked": "sk-68572***********************bfb9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 639367936,
+      "cache_miss": 4153562,
+      "cost": {
+       "cache_hit": "23.30313472",
+       "cache_miss": "7.588994",
+       "output": "9.884820",
+       "tool": "0"
+      },
+      "cost_total": "40.77694872",
+      "output": 1375981,
+      "requests": 3422,
+      "tool_calls": 0
+     }
+    },
+    "name": "赵杭"
+   },
+   "sk-6d55d***********************5262": {
+    "masked": "sk-6d55d***********************5262",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 111216000,
+      "cache_miss": 1072382,
+      "cost": {
+       "cache_hit": "4.44864000",
+       "cache_miss": "2.144764",
+       "output": "2.334088",
+       "tool": "0"
+      },
+      "cost_total": "8.92749200",
+      "output": 291761,
+      "requests": 280,
+      "tool_calls": 0
+     },
+     "server-tool-search": {
+      "cache_hit": 0,
+      "cache_miss": 0,
+      "cost": {
+       "cache_hit": "0",
+       "cache_miss": "0",
+       "output": "0",
+       "tool": "0"
+      },
+      "cost_total": "0",
+      "output": 0,
+      "requests": 0,
+      "tool_calls": 2
+     }
+    },
+    "name": "高鹏程"
+   },
+   "sk-87071***********************7263": {
+    "masked": "sk-87071***********************7263",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 6772736,
+      "cache_miss": 203531,
+      "cost": {
+       "cache_hit": "0.27090944",
+       "cache_miss": "0.407062",
+       "output": "0.207128",
+       "tool": "0"
+      },
+      "cost_total": "0.88509944",
+      "output": 25891,
+      "requests": 33,
+      "tool_calls": 0
+     }
+    },
+    "name": "祁殷俏"
+   },
+   "sk-ed61d***********************0d75": {
+    "masked": "sk-ed61d***********************0d75",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 1373952,
+      "cache_miss": 66966,
+      "cost": {
+       "cache_hit": "0.05495808",
+       "cache_miss": "0.133932",
+       "output": "0.165600",
+       "tool": "0"
+      },
+      "cost_total": "0.35449008",
+      "output": 20700,
+      "requests": 49,
+      "tool_calls": 0
+     },
+     "server-tool-search": {
+      "cache_hit": 0,
+      "cache_miss": 0,
+      "cost": {
+       "cache_hit": "0",
+       "cache_miss": "0",
+       "output": "0",
+       "tool": "0"
+      },
+      "cost_total": "0",
+      "output": 0,
+      "requests": 0,
+      "tool_calls": 1
+     }
+    },
+    "name": "黄绵吉"
+   }
   }
  },
- "data_version": "9c89d741db63",
+ "data_version": "e3303f864600",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -3906,9 +4016,10 @@
   "2026-11-20",
   "2026-11-21",
   "2026-11-22",
-  "2026-11-23"
+  "2026-11-23",
+  "2026-11-24"
  ],
- "default_date": "2026-11-23",
+ "default_date": "2026-11-24",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -3963,7 +4074,8 @@
   "amount-2026-11-20.csv",
   "amount-2026-11-21.csv",
   "amount-2026-11-22.csv",
-  "amount-2026-11-23.csv"
+  "amount-2026-11-23.csv",
+  "amount-2026-11-24.csv"
  ],
  "warnings": []
 }
