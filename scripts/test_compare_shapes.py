@@ -133,6 +133,64 @@ process.stdout.write(JSON.stringify({ html: EXPORTS.buildCompareHtml(day) }));
         tmp.unlink(missing_ok=True)
 
 
+def render_all_days() -> list[dict]:
+    """Render the compare table for every archived day, in one Node process.
+
+    Synthetic shapes can only cover shapes somebody thought of; the real archive has the
+    awkward combinations (several keys, one of them with 3 groups incl. the tool row). This
+    is also the only place the per-day *row layout* is checked for every day rather than just
+    the newest one (verify_site.js only renders SITE.default_date).
+    """
+    js = r"""
+const fs = require('fs'), vm = require('vm');
+const html = fs.readFileSync('index.html', 'utf8');
+const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+function makeEl(id) {
+  return { id, _html: "", value: "", children: [], style: {}, dataset: {},
+    set innerHTML(v) { this._html = String(v); }, get innerHTML() { return this._html; },
+    set textContent(v) {}, get textContent() { return ""; },
+    appendChild() {}, addEventListener() {}, setAttribute() {},
+    querySelectorAll() { return []; }, closest() { return null; },
+    classList: { add() {}, remove() {}, contains: () => false }, options: [] };
+}
+const els = {};
+let EXPORTS = null;
+const sandbox = {
+  document: { getElementById: (id) => (els[id] = els[id] || makeEl(id)),
+              createElement: () => makeEl(null), querySelectorAll: () => [] },
+  console: { log() {}, error() {}, warn() {} },
+  __SITE_TEST__: (api) => { EXPORTS = api; },
+};
+sandbox.globalThis = sandbox;
+vm.createContext(sandbox);
+vm.runInContext(script, sandbox);
+const out = [];
+for (const date of EXPORTS.SITE.dates) {
+  const day = EXPORTS.SITE.data[date] || {};
+  const html = EXPORTS.buildCompareHtml(day) || "";
+  const counts = [...html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)]
+    .map((m) => [...m[1].matchAll(/<t[dh][^>]*>/g)].length);
+  out.push({
+    date,
+    counts,
+    keys: Object.keys(day).length,
+    models: Object.values(day).reduce((n, e) => n + Object.keys(e.models).length, 0),
+    subtotals: (html.match(/>小计<\/td>/g) || []).length,
+  });
+}
+process.stdout.write(JSON.stringify(out));
+"""
+    tmp = ROOT / "_alldays_shim.js"
+    tmp.write_text(js, encoding="utf-8")
+    try:
+        r = subprocess.run(["node", str(tmp)], capture_output=True, text=True, cwd=ROOT)
+        if r.returncode != 0:
+            raise RuntimeError(r.stderr.strip()[:400])
+        return json.loads(r.stdout)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
 def rows_detail(html: str) -> list[dict]:
     """Per row: how many <td> it has, and its first used visual column."""
     rows = [m[1] for m in re.finditer(r"<tr[^>]*>([\s\S]*?)</tr>", html)]
@@ -293,6 +351,34 @@ def main() -> int:
               "小计 sums requests and tool calls in separate columns", str(s[2:7]))
         check(abs(money(s[11]) - 1.07) < 1e-9,
               "小计 费用合计 includes the tool cost", repr(s[11]))
+
+    # --- every archived day: the row layout must obey the same rules -----------------
+    # verify_site.js only renders the newest day, so a formula that happens to be wrong for
+    # an older shape sits undetected until that shape shows up again. This walks the whole
+    # archive (a single Node run) and checks the layout invariants for every day.
+    print("\n=== all archived days: row layout ===")
+    all_days = render_all_days()
+    bad_days = []
+    for d in all_days:
+        body = d["counts"][1:]                      # counts[0] is the header row
+        cont_expected = d["models"] - d["keys"]     # Σ(models-1)
+        problems = []
+        if any(n not in (11, 12) for n in d["counts"]):
+            problems.append(f"odd cell counts {d['counts']}")
+        if len(body) != d["models"] + d["subtotals"] + 1:
+            problems.append(f"body rows={len(body)} want {d['models'] + d['subtotals'] + 1}")
+        if sum(1 for n in body if n == 12) != d["keys"] + d["subtotals"] + 1:
+            problems.append(f"12-cell rows={sum(1 for n in body if n == 12)} "
+                            f"want {d['keys'] + d['subtotals'] + 1}")
+        if sum(1 for n in body if n == 11) != cont_expected:
+            problems.append(f"11-cell rows={sum(1 for n in body if n == 11)} want {cont_expected}")
+        if d["subtotals"] and d["models"] == d["keys"]:
+            problems.append("小计 row without any multi-model key")
+        if problems:
+            bad_days.append(f"{d['date']} counts={d['counts']} keys={d['keys']} "
+                            f"models={d['models']}: {', '.join(problems)}")
+    check(not bad_days, f"all {len(all_days)} archived days follow the layout rules",
+          "\n      " + "\n      ".join(bad_days[:8]))
 
     if not chrome:
         print("\n(no chrome path given; skipping rendered-geometry check)")

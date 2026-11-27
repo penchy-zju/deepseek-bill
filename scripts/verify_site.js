@@ -300,21 +300,39 @@ ok(detailCounts.length > 0 && detailCounts.every((n) => n === 11),
 const multiModelKeys = Object.keys(SITE.data[date])
   .filter((k) => Object.keys(SITE.data[date][k].models).length > 1);
 const hasMultiModel = multiModelKeys.length > 0;
-const totalRowCount = (compare.match(/<tr class="total">/g) || []).length;
+// A key with N models renders 1 key cell (rowspan=N) + N-1 continuation rows, i.e. the
+// number of continuation rows is Σ(models-1), NOT the number of multi-model keys. Those two
+// agree only while every multi-model key has exactly 2 models; on 2026-11-26 one key used
+// flash + v4-pro + server-tool-search (3 models -> 2 continuation rows) and this check
+// demanded 1, failing two nightly runs while the page itself was correct.
+const continuationRows = Object.keys(SITE.data[date])
+  .reduce((n, k) => n + Math.max(0, Object.keys(SITE.data[date][k].models).length - 1), 0);
 const subtotalCount = (compare.match(/>小计<\/td>/g) || []).length;
-
 ok(hasMultiModel ? subtotalCount === multiModelKeys.length : subtotalCount === 0,
    hasMultiModel
      ? `a 小计 row per multi-model key (${multiModelKeys.length} key(s))`
      : "no 小计 row when no key uses multiple models",
    `multi-model keys=${multiModelKeys.length} subtotal rows=${subtotalCount}`);
-ok(compareCounts.every((n) => n === 11 || n === 12),
-   "compare table: rows have 11 (rowspan continuation) or 12 cells",
-   `counts = ${compareCounts.join(",")}`);
-// A continuation row only exists for a multi-model key, so their counts must match.
-ok(compareCounts.filter((n) => n === 11).length === multiModelKeys.length,
-   "one rowspan continuation row (11 cells) per multi-model key",
-   `counts = ${compareCounts.join(",")} multi=${multiModelKeys.length}`);
+// Every model after a key's first one renders as a continuation row without the key cell.
+ok(compareCounts.filter((n) => n === 11).length === continuationRows,
+   `one rowspan continuation row (11 cells) per extra model (${continuationRows} expected)`,
+   `counts = ${compareCounts.join(",")} sum(models-1)=${continuationRows} ` +
+   `multi-model keys=${multiModelKeys.length}`);
+// Two structural invariants derived a different way, so a wrong row-count formula cannot
+// agree with the HTML by construction:
+//   body rows      = Σ(models) + #小计 + 1 grand total
+//   12-cell rows   = one per key + one per 小计 row + the grand total
+//                    (continuations are the 11-cell ones)
+const keyCount = Object.keys(SITE.data[date]).length;
+const modelRows = Object.keys(SITE.data[date])
+  .reduce((n, k) => n + Object.keys(SITE.data[date][k].models).length, 0);
+const bodyCounts = compareCounts.slice(1);   // compareCounts[0] is the header row
+ok(bodyCounts.length === modelRows + subtotalCount + 1,
+   `body rows = ${modelRows} model rows + ${subtotalCount} 小计 + 1 grand total`,
+   `body rows=${bodyCounts.length} counts=${bodyCounts.join(",")}`);
+ok(bodyCounts.filter((n) => n === 12).length === keyCount + subtotalCount + 1,
+   `12-cell rows = ${keyCount} keys + ${subtotalCount} 小计 + grand total`,
+   `counts=${bodyCounts.join(",")}`);
 ok(hasMultiModel
      ? compare.includes('<td class="grp model-cell"></td>')
      : !compare.includes('>小计</td>'),
