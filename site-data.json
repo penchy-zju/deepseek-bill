@@ -4159,9 +4159,145 @@
     },
     "name": "黄绵吉"
    }
+  },
+  "2026-11-27": {
+   "sk-4589b***********************6263": {
+    "masked": "sk-4589b***********************6263",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 7313664,
+      "cache_miss": 326061,
+      "cost": {
+       "cache_hit": "1.93403520",
+       "cache_miss": "2.3127975",
+       "output": "3.3547770",
+       "tool": "0"
+      },
+      "cost_total": "7.60160970",
+      "output": 127665,
+      "requests": 67,
+      "tool_calls": 0
+     }
+    },
+    "name": "俞佳杰"
+   },
+   "sk-5946a***********************9c4b": {
+    "masked": "sk-5946a***********************9c4b",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 924416,
+      "cache_miss": 46599,
+      "cost": {
+       "cache_hit": "0.01848832",
+       "cache_miss": "0.046599",
+       "output": "0.021612",
+       "tool": "0"
+      },
+      "cost_total": "0.08669932",
+      "output": 5403,
+      "requests": 18,
+      "tool_calls": 0
+     }
+    },
+    "name": "沈曲"
+   },
+   "sk-68572***********************bfb9": {
+    "masked": "sk-68572***********************bfb9",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 11693184,
+      "cache_miss": 265244,
+      "cost": {
+       "cache_hit": "0.41038592",
+       "cache_miss": "0.513744",
+       "output": "1.233908",
+       "tool": "0"
+      },
+      "cost_total": "2.15803792",
+      "output": 165472,
+      "requests": 184,
+      "tool_calls": 0
+     },
+     "server-tool-search": {
+      "cache_hit": 0,
+      "cache_miss": 0,
+      "cost": {
+       "cache_hit": "0",
+       "cache_miss": "0",
+       "output": "0",
+       "tool": "0"
+      },
+      "cost_total": "0",
+      "output": 0,
+      "requests": 0,
+      "tool_calls": 2
+     }
+    },
+    "name": "赵杭"
+   },
+   "sk-6d55d***********************5262": {
+    "masked": "sk-6d55d***********************5262",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 46000256,
+      "cache_miss": 911792,
+      "cost": {
+       "cache_hit": "1.21408000",
+       "cache_miss": "1.349284",
+       "output": "1.139412",
+       "tool": "0"
+      },
+      "cost_total": "3.70277600",
+      "output": 228577,
+      "requests": 265,
+      "tool_calls": 0
+     }
+    },
+    "name": "高鹏程"
+   },
+   "sk-87071***********************7263": {
+    "masked": "sk-87071***********************7263",
+    "models": {
+     "deepseek-flash": {
+      "cache_hit": 172928,
+      "cache_miss": 272251,
+      "cost": {
+       "cache_hit": "0.00691712",
+       "cache_miss": "0.544502",
+       "output": "0.061368",
+       "tool": "0"
+      },
+      "cost_total": "0.61278712",
+      "output": 7671,
+      "requests": 3,
+      "tool_calls": 0
+     }
+    },
+    "name": "祁殷俏"
+   },
+   "sk-ed61d***********************0d75": {
+    "masked": "sk-ed61d***********************0d75",
+    "models": {
+     "deepseek-v4-pro": {
+      "cache_hit": 2391680,
+      "cache_miss": 359082,
+      "cost": {
+       "cache_hit": "0.7175040",
+       "cache_miss": "3.231738",
+       "output": "1.728675",
+       "tool": "0"
+      },
+      "cost_total": "5.6779170",
+      "output": 64025,
+      "requests": 58,
+      "tool_calls": 0
+     }
+    },
+    "name": "黄绵吉"
+   }
   }
  },
- "data_version": "aa53000fbec3",
+ "data_version": "4f821310610d",
  "dates": [
   "2026-09-21",
   "2026-09-22",
@@ -4219,9 +4355,10 @@
   "2026-11-23",
   "2026-11-24",
   "2026-11-25",
-  "2026-11-26"
+  "2026-11-26",
+  "2026-11-27"
  ],
- "default_date": "2026-11-26",
+ "default_date": "2026-11-27",
  "source_files": [
   "amount-2026-09-21.csv",
   "amount-2026-09-22.csv",
@@ -4279,7 +4416,8 @@
   "amount-2026-11-23.csv",
   "amount-2026-11-24.csv",
   "amount-2026-11-25.csv",
-  "amount-2026-11-26.csv"
+  "amount-2026-11-26.csv",
+  "amount-2026-11-27.csv"
  ],
  "warnings": []
 }
